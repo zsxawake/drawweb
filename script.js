@@ -11,16 +11,16 @@ let lastY = 0;
 let currentColor = '#ff69b4';
 let drawingEnabled = true;
 
-// Хранилище для всех точек
-let allPoints = [];
+// Массив для хранения точек
+let points = [];
 
 // Инициализация холста
 ctx.strokeStyle = currentColor;
-ctx.lineWidth = 3;
+ctx.lineWidth = 4;
 ctx.lineCap = 'round';
 ctx.lineJoin = 'round';
 ctx.shadowColor = '#ff69b4';
-ctx.shadowBlur = 10;
+ctx.shadowBlur = 15;
 ctx.fillStyle = '#000';
 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -30,8 +30,7 @@ async function loadDrawings() {
         const { data, error } = await supabase
             .from('drawings')
             .select('*')
-            .order('created_at', { ascending: true })
-            .limit(1000); // Ограничиваем количество точек
+            .order('created_at', { ascending: true });
 
         if (error) throw error;
 
@@ -40,8 +39,10 @@ async function loadDrawings() {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         // Сохраняем точки и рисуем их
-        allPoints = data || [];
+        points = data || [];
         redrawAllPoints();
+        
+        console.log('Загружено точек:', points.length);
     } catch (error) {
         console.error('Ошибка загрузки:', error);
     }
@@ -52,13 +53,11 @@ function redrawAllPoints() {
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    ctx.shadowColor = '#ff69b4';
-    ctx.shadowBlur = 10;
-    
-    allPoints.forEach(point => {
+    points.forEach(point => {
         ctx.fillStyle = point.color;
+        ctx.shadowColor = point.color;
         ctx.beginPath();
-        ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
+        ctx.arc(point.x, point.y, 3, 0, Math.PI * 2);
         ctx.fill();
     });
 }
@@ -66,11 +65,18 @@ function redrawAllPoints() {
 // Отправка точки в базу данных
 async function savePoint(x, y, color) {
     try {
-        const { error } = await supabase
+        const { data, error } = await supabase
             .from('drawings')
-            .insert([{ x, y, color }]);
+            .insert([{ 
+                x: Math.round(x), 
+                y: Math.round(y), 
+                color: color 
+            }])
+            .select();
 
         if (error) throw error;
+        
+        console.log('Точка сохранена:', data);
     } catch (error) {
         console.error('Ошибка сохранения:', error);
     }
@@ -78,82 +84,121 @@ async function savePoint(x, y, color) {
 
 // Подписка на новые точки
 function subscribeToDrawings() {
+    // Подписываемся на INSERT события
     supabase
         .channel('drawings-channel')
         .on(
             'postgres_changes',
-            { event: 'INSERT', schema: 'public', table: 'drawings' },
+            { 
+                event: 'INSERT', 
+                schema: 'public', 
+                table: 'drawings' 
+            },
             (payload) => {
+                console.log('Новая точка от другого пользователя:', payload.new);
                 const newPoint = payload.new;
-                allPoints.push(newPoint);
+                
+                // Добавляем точку в массив
+                points.push(newPoint);
                 
                 // Рисуем новую точку
                 ctx.fillStyle = newPoint.color;
                 ctx.shadowColor = newPoint.color;
                 ctx.beginPath();
-                ctx.arc(newPoint.x, newPoint.y, 4, 0, Math.PI * 2);
+                ctx.arc(newPoint.x, newPoint.y, 3, 0, Math.PI * 2);
                 ctx.fill();
             }
         )
         .on(
             'postgres_changes',
-            { event: 'DELETE', schema: 'public', table: 'drawings' },
-            () => {
-                // При очистке перезагружаем все
-                loadDrawings();
+            { 
+                event: 'DELETE', 
+                schema: 'public', 
+                table: 'drawings' 
+            },
+            (payload) => {
+                console.log('Холст очищен другим пользователем');
+                // Очищаем локальное хранилище и холст
+                points = [];
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
         )
-        .subscribe();
+        .subscribe((status) => {
+            console.log('Статус подписки:', status);
+        });
+}
+
+// Функция для рисования линии с интерполяцией
+function drawLine(x1, y1, x2, y2, color) {
+    // Рисуем линию на холсте
+    ctx.strokeStyle = color;
+    ctx.shadowColor = color;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    
+    // Создаем промежуточные точки для более плавной линии
+    const distance = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+    const steps = Math.max(2, Math.floor(distance / 2));
+    
+    for (let i = 1; i <= steps; i++) {
+        const t = i / steps;
+        const pointX = Math.round(x1 + (x2 - x1) * t);
+        const pointY = Math.round(y1 + (y2 - y1) * t);
+        
+        // Рисуем точку
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(pointX, pointY, 3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Сохраняем точку в базу
+        savePoint(pointX, pointY, color);
+    }
 }
 
 // Обработчики рисования
 canvas.addEventListener('mousedown', (e) => {
+    e.preventDefault();
     if (!drawingEnabled) return;
+    
     isDrawing = true;
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const x = Math.round((e.clientX - rect.left) * scaleX);
+    const y = Math.round((e.clientY - rect.top) * scaleY);
     
     lastX = x;
     lastY = y;
     
-    // Рисуем точку
+    // Рисуем начальную точку
     ctx.fillStyle = currentColor;
     ctx.shadowColor = currentColor;
     ctx.beginPath();
-    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.arc(x, y, 3, 0, Math.PI * 2);
     ctx.fill();
     
-    // Сохраняем точку
+    // Сохраняем начальную точку
     savePoint(x, y, currentColor);
 });
 
 canvas.addEventListener('mousemove', (e) => {
-    if (!isDrawing || !drawingEnabled) return;
+    e.preventDefault();
+    if (!isDrawing) return;
     
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
     
-    // Рисуем линию
-    ctx.strokeStyle = currentColor;
-    ctx.shadowColor = currentColor;
-    ctx.beginPath();
-    ctx.moveTo(lastX, lastY);
-    ctx.lineTo(x, y);
-    ctx.stroke();
+    const x = Math.round((e.clientX - rect.left) * scaleX);
+    const y = Math.round((e.clientY - rect.top) * scaleY);
     
-    // Рисуем точки на линии для базы данных
-    const distance = Math.sqrt(Math.pow(x - lastX, 2) + Math.pow(y - lastY, 2));
-    const steps = Math.max(2, Math.floor(distance / 5));
-    
-    for (let i = 1; i <= steps; i++) {
-        const t = i / steps;
-        const pointX = lastX + (x - lastX) * t;
-        const pointY = lastY + (y - lastY) * t;
-        
-        savePoint(pointX, pointY, currentColor);
-    }
+    // Рисуем линию от предыдущей точки до текущей
+    drawLine(lastX, lastY, x, y, currentColor);
     
     lastX = x;
     lastY = y;
@@ -173,15 +218,16 @@ clearBtn.addEventListener('click', async () => {
         const { error } = await supabase
             .from('drawings')
             .delete()
-            .neq('id', 0); // Удаляем все записи
+            .neq('id', 0);
 
         if (error) throw error;
         
-        // Очищаем локальное хранилище
-        allPoints = [];
+        // Очищаем локально
+        points = [];
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
+        console.log('Холст очищен');
     } catch (error) {
         console.error('Ошибка очистки:', error);
     }
@@ -192,34 +238,26 @@ colorPicker.addEventListener('input', (e) => {
     currentColor = e.target.value;
 });
 
-// Симуляция счетчика пользователей (в реальном проекте используйте Presence API)
+// Функция для обновления количества пользователей (упрощенная версия)
 let usersOnline = 1;
 setInterval(() => {
-    // Здесь можно добавить реальное отслеживание пользователей через Supabase Presence
-    usersOnline = Math.max(1, Math.min(5, usersOnline + Math.floor(Math.random() * 3) - 1));
+    // Простая симуляция - в реальном проекте используйте Presence API
+    usersOnline = Math.floor(Math.random() * 3) + 1;
     usersCountSpan.textContent = usersOnline;
-}, 5000);
+}, 10000);
 
-// Инициализация
-async function init() {
-    await loadDrawings();
-    subscribeToDrawings();
-    
-    // Добавляем небольшую задержку для неонового эффекта
-    setTimeout(() => {
-        redrawAllPoints();
-    }, 100);
-}
-
-init();
-
-// Адаптация под мобильные устройства
+// Мобильные обработчики
 canvas.addEventListener('touchstart', (e) => {
     e.preventDefault();
+    if (!drawingEnabled) return;
+    
     const touch = e.touches[0];
     const rect = canvas.getBoundingClientRect();
-    const x = touch.clientX - rect.left;
-    const y = touch.clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const x = Math.round((touch.clientX - rect.left) * scaleX);
+    const y = Math.round((touch.clientY - rect.top) * scaleY);
     
     isDrawing = true;
     lastX = x;
@@ -228,7 +266,7 @@ canvas.addEventListener('touchstart', (e) => {
     ctx.fillStyle = currentColor;
     ctx.shadowColor = currentColor;
     ctx.beginPath();
-    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.arc(x, y, 3, 0, Math.PI * 2);
     ctx.fill();
     
     savePoint(x, y, currentColor);
@@ -240,17 +278,13 @@ canvas.addEventListener('touchmove', (e) => {
     
     const touch = e.touches[0];
     const rect = canvas.getBoundingClientRect();
-    const x = touch.clientX - rect.left;
-    const y = touch.clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
     
-    ctx.strokeStyle = currentColor;
-    ctx.shadowColor = currentColor;
-    ctx.beginPath();
-    ctx.moveTo(lastX, lastY);
-    ctx.lineTo(x, y);
-    ctx.stroke();
+    const x = Math.round((touch.clientX - rect.left) * scaleX);
+    const y = Math.round((touch.clientY - rect.top) * scaleY);
     
-    savePoint(x, y, currentColor);
+    drawLine(lastX, lastY, x, y, currentColor);
     
     lastX = x;
     lastY = y;
@@ -260,3 +294,13 @@ canvas.addEventListener('touchend', (e) => {
     e.preventDefault();
     isDrawing = false;
 });
+
+// Инициализация
+async function init() {
+    console.log('Инициализация приложения...');
+    await loadDrawings();
+    subscribeToDrawings();
+}
+
+// Запускаем приложение
+init();
