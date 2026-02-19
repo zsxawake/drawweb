@@ -9,10 +9,9 @@ let isDrawing = false;
 let lastX = 0;
 let lastY = 0;
 let currentColor = '#ff69b4';
-let drawingEnabled = true;
 
-// Массив для хранения точек
-let points = [];
+// Массив для хранения всех точек
+let allDrawings = [];
 
 // Инициализация холста
 ctx.strokeStyle = currentColor;
@@ -24,9 +23,11 @@ ctx.shadowBlur = 15;
 ctx.fillStyle = '#000';
 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-// Загрузка существующих рисунков
-async function loadDrawings() {
+// Функция для загрузки всех рисунков при старте
+async function loadAllDrawings() {
     try {
+        console.log('Загружаем все рисунки...');
+        
         const { data, error } = await supabase
             .from('drawings')
             .select('*')
@@ -34,26 +35,26 @@ async function loadDrawings() {
 
         if (error) throw error;
 
-        // Очищаем холст
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Сохраняем все точки
+        allDrawings = data || [];
         
-        // Сохраняем точки и рисуем их
-        points = data || [];
-        redrawAllPoints();
+        // Отрисовываем все точки
+        redrawAllDrawings();
         
-        console.log('Загружено точек:', points.length);
+        console.log(`Загружено ${allDrawings.length} точек`);
     } catch (error) {
         console.error('Ошибка загрузки:', error);
     }
 }
 
-// Перерисовать все точки
-function redrawAllPoints() {
+// Функция для полной перерисовки холста
+function redrawAllDrawings() {
+    // Очищаем холст (заливаем черным)
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    points.forEach(point => {
+    // Рисуем все сохраненные точки
+    allDrawings.forEach(point => {
         ctx.fillStyle = point.color;
         ctx.shadowColor = point.color;
         ctx.beginPath();
@@ -62,7 +63,7 @@ function redrawAllPoints() {
     });
 }
 
-// Отправка точки в базу данных
+// Функция для сохранения точки
 async function savePoint(x, y, color) {
     try {
         const { data, error } = await supabase
@@ -76,60 +77,18 @@ async function savePoint(x, y, color) {
 
         if (error) throw error;
         
-        console.log('Точка сохранена:', data);
+        // Добавляем новую точку в локальный массив
+        if (data && data[0]) {
+            allDrawings.push(data[0]);
+        }
+        
+        console.log('Точка сохранена');
     } catch (error) {
         console.error('Ошибка сохранения:', error);
     }
 }
 
-// Подписка на новые точки
-function subscribeToDrawings() {
-    // Подписываемся на INSERT события
-    supabase
-        .channel('drawings-channel')
-        .on(
-            'postgres_changes',
-            { 
-                event: 'INSERT', 
-                schema: 'public', 
-                table: 'drawings' 
-            },
-            (payload) => {
-                console.log('Новая точка от другого пользователя:', payload.new);
-                const newPoint = payload.new;
-                
-                // Добавляем точку в массив
-                points.push(newPoint);
-                
-                // Рисуем новую точку
-                ctx.fillStyle = newPoint.color;
-                ctx.shadowColor = newPoint.color;
-                ctx.beginPath();
-                ctx.arc(newPoint.x, newPoint.y, 3, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        )
-        .on(
-            'postgres_changes',
-            { 
-                event: 'DELETE', 
-                schema: 'public', 
-                table: 'drawings' 
-            },
-            (payload) => {
-                console.log('Холст очищен другим пользователем');
-                // Очищаем локальное хранилище и холст
-                points = [];
-                ctx.fillStyle = '#000';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-            }
-        )
-        .subscribe((status) => {
-            console.log('Статус подписки:', status);
-        });
-}
-
-// Функция для рисования линии с интерполяцией
+// Функция для рисования линии
 function drawLine(x1, y1, x2, y2, color) {
     // Рисуем линию на холсте
     ctx.strokeStyle = color;
@@ -139,7 +98,7 @@ function drawLine(x1, y1, x2, y2, color) {
     ctx.lineTo(x2, y2);
     ctx.stroke();
     
-    // Создаем промежуточные точки для более плавной линии
+    // Создаем промежуточные точки для сохранения
     const distance = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
     const steps = Math.max(2, Math.floor(distance / 2));
     
@@ -154,24 +113,27 @@ function drawLine(x1, y1, x2, y2, color) {
         ctx.arc(pointX, pointY, 3, 0, Math.PI * 2);
         ctx.fill();
         
-        // Сохраняем точку в базу
+        // Сохраняем точку
         savePoint(pointX, pointY, color);
     }
 }
 
 // Обработчики рисования
-canvas.addEventListener('mousedown', (e) => {
+canvas.addEventListener('mousedown', startDrawing);
+canvas.addEventListener('mousemove', draw);
+canvas.addEventListener('mouseup', stopDrawing);
+canvas.addEventListener('mouseleave', stopDrawing);
+
+// Мобильные обработчики
+canvas.addEventListener('touchstart', handleTouchStart);
+canvas.addEventListener('touchmove', handleTouchMove);
+canvas.addEventListener('touchend', stopDrawing);
+
+function startDrawing(e) {
     e.preventDefault();
-    if (!drawingEnabled) return;
-    
     isDrawing = true;
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
     
-    const x = Math.round((e.clientX - rect.left) * scaleX);
-    const y = Math.round((e.clientY - rect.top) * scaleY);
-    
+    const { x, y } = getCoordinates(e);
     lastX = x;
     lastY = y;
     
@@ -184,33 +146,71 @@ canvas.addEventListener('mousedown', (e) => {
     
     // Сохраняем начальную точку
     savePoint(x, y, currentColor);
-});
+}
 
-canvas.addEventListener('mousemove', (e) => {
+function draw(e) {
     e.preventDefault();
     if (!isDrawing) return;
     
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    
-    const x = Math.round((e.clientX - rect.left) * scaleX);
-    const y = Math.round((e.clientY - rect.top) * scaleY);
+    const { x, y } = getCoordinates(e);
     
     // Рисуем линию от предыдущей точки до текущей
     drawLine(lastX, lastY, x, y, currentColor);
     
     lastX = x;
     lastY = y;
-});
+}
 
-canvas.addEventListener('mouseup', () => {
+function stopDrawing(e) {
+    e.preventDefault();
     isDrawing = false;
-});
+}
 
-canvas.addEventListener('mouseleave', () => {
-    isDrawing = false;
-});
+function handleTouchStart(e) {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const mouseEvent = new MouseEvent('mousedown', {
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+    });
+    canvas.dispatchEvent(mouseEvent);
+}
+
+function handleTouchMove(e) {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const mouseEvent = new MouseEvent('mousemove', {
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+    });
+    canvas.dispatchEvent(mouseEvent);
+}
+
+// Вспомогательная функция для получения координат
+function getCoordinates(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    let clientX, clientY;
+    
+    if (e.touches) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+    } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+    }
+    
+    const x = Math.round((clientX - rect.left) * scaleX);
+    const y = Math.round((clientY - rect.top) * scaleY);
+    
+    // Ограничиваем координаты в пределах холста
+    return {
+        x: Math.max(0, Math.min(canvas.width, x)),
+        y: Math.max(0, Math.min(canvas.height, y))
+    };
+}
 
 // Очистка холста
 clearBtn.addEventListener('click', async () => {
@@ -222,8 +222,10 @@ clearBtn.addEventListener('click', async () => {
 
         if (error) throw error;
         
-        // Очищаем локально
-        points = [];
+        // Очищаем локальный массив
+        allDrawings = [];
+        
+        // Очищаем холст
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
@@ -238,69 +240,22 @@ colorPicker.addEventListener('input', (e) => {
     currentColor = e.target.value;
 });
 
-// Функция для обновления количества пользователей (упрощенная версия)
+// Функция обновления счетчика пользователей
 let usersOnline = 1;
 setInterval(() => {
-    // Простая симуляция - в реальном проекте используйте Presence API
     usersOnline = Math.floor(Math.random() * 3) + 1;
     usersCountSpan.textContent = usersOnline;
 }, 10000);
 
-// Мобильные обработчики
-canvas.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    if (!drawingEnabled) return;
-    
-    const touch = e.touches[0];
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    
-    const x = Math.round((touch.clientX - rect.left) * scaleX);
-    const y = Math.round((touch.clientY - rect.top) * scaleY);
-    
-    isDrawing = true;
-    lastX = x;
-    lastY = y;
-    
-    ctx.fillStyle = currentColor;
-    ctx.shadowColor = currentColor;
-    ctx.beginPath();
-    ctx.arc(x, y, 3, 0, Math.PI * 2);
-    ctx.fill();
-    
-    savePoint(x, y, currentColor);
+// Загружаем все рисунки при старте
+loadAllDrawings();
+
+// Добавляем кнопку обновления (на всякий случай)
+const refreshBtn = document.createElement('button');
+refreshBtn.textContent = '🔄 Обновить';
+refreshBtn.className = 'neon-button';
+refreshBtn.style.marginLeft = '10px';
+refreshBtn.addEventListener('click', () => {
+    loadAllDrawings();
 });
-
-canvas.addEventListener('touchmove', (e) => {
-    e.preventDefault();
-    if (!isDrawing) return;
-    
-    const touch = e.touches[0];
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    
-    const x = Math.round((touch.clientX - rect.left) * scaleX);
-    const y = Math.round((touch.clientY - rect.top) * scaleY);
-    
-    drawLine(lastX, lastY, x, y, currentColor);
-    
-    lastX = x;
-    lastY = y;
-});
-
-canvas.addEventListener('touchend', (e) => {
-    e.preventDefault();
-    isDrawing = false;
-});
-
-// Инициализация
-async function init() {
-    console.log('Инициализация приложения...');
-    await loadDrawings();
-    subscribeToDrawings();
-}
-
-// Запускаем приложение
-init();
+document.querySelector('.controls').appendChild(refreshBtn);
