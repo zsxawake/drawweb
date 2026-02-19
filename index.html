@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>💕 Наше рисование</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a1a, #2d1a2d);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            padding: 12px;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 32px;
+            padding: 20px;
+            box-shadow: 0 20px 40px rgba(255, 105, 180, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 105, 180, 0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #ff69b4;
+            font-size: 28px;
+            text-shadow: 0 0 15px #ff69b4;
+            letter-spacing: 2px;
+        }
+
+        .header p {
+            color: #ff99cc;
+            font-size: 16px;
+            margin-top: 8px;
+            opacity: 0.9;
+        }
+
+        .canvas-wrapper {
+            background: #000;
+            border-radius: 24px;
+            padding: 12px;
+            box-shadow: 0 0 30px rgba(255, 105, 180, 0.4);
+            margin-bottom: 20px;
+            border: 2px solid #ff69b4;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #000;
+            border-radius: 16px;
+            touch-action: none;
+            cursor: crosshair;
+        }
+
+        .tools {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(145deg, #ff69b4, #ff1493);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 600;
+            box-shadow: 0 8px 20px rgba(255, 20, 147, 0.4);
+            cursor: pointer;
+            transition: all 0.2s;
+            flex: 1;
+            min-width: 140px;
+            touch-action: manipulation;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 4px 10px rgba(255, 20, 147, 0.6);
+        }
+
+        .btn.vibrate {
+            background: linear-gradient(145deg, #ff1493, #ff69b4);
+            font-size: 20px;
+        }
+
+        .btn.clear {
+            background: linear-gradient(145deg, #333, #1a1a1a);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+            border: 1px solid #ff69b4;
+        }
+
+        .status {
+            text-align: center;
+            color: #ff69b4;
+            font-size: 18px;
+            margin: 15px 0;
+            padding: 12px;
+            background: rgba(255, 105, 180, 0.1);
+            border-radius: 50px;
+            border: 1px dashed #ff69b4;
+            font-weight: 500;
+        }
+
+        .footer {
+            text-align: center;
+            color: #ff99cc;
+            margin-top: 20px;
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        /* Индикатор рисования */
+        .drawing-indicator {
+            width: 12px;
+            height: 12px;
+            background: #ff69b4;
+            border-radius: 50%;
+            display: inline-block;
+            margin-left: 8px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 Рисуем вместе</h1>
+            <p>💖 для двоих 💖</p>
+        </div>
+
+        <div class="canvas-wrapper">
+            <canvas id="drawCanvas" width="500" height="500"></canvas>
+        </div>
+
+        <div class="status" id="status">
+            Рисуй розовым ✨
+            <span class="drawing-indicator"></span>
+        </div>
+
+        <div class="tools">
+            <button class="btn vibrate" id="vibrateBtn" ontouchstart="sendVibration()" onclick="sendVibration()">
+                📱 Вибрация
+                <span style="display: block; font-size: 12px;">(двойное нажатие)</span>
+            </button>
+            
+            <button class="btn clear" id="clearBtn" ontouchstart="clearCanvas()" onclick="clearCanvas()">
+                🧹 Очистить
+            </button>
+        </div>
+
+        <div class="footer">
+            просто рисуй, второй увидит 💕
+        </div>
+    </div>
+
+    <script>
+        // Инициализация
+        const canvas = document.getElementById('drawCanvas');
+        const ctx = canvas.getContext('2d');
+        const statusEl = document.getElementById('status');
+
+        // Настройки рисования
+        ctx.strokeStyle = '#ff69b4';
+        ctx.lineWidth = 8;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        // Черный фон
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Переменные для рисования
+        let drawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        let lastTap = 0;
+
+        // ===== Функции рисования =====
+        function getCanvasCoordinates(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            let clientX, clientY;
+            
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            
+            return {
+                x: Math.min(canvas.width, Math.max(0, (clientX - rect.left) * scaleX)),
+                y: Math.min(canvas.height, Math.max(0, (clientY - rect.top) * scaleY))
+            };
+        }
+
+        function startDrawing(e) {
+            e.preventDefault();
+            drawing = true;
+            const pos = getCanvasCoordinates(e);
+            lastX = pos.x;
+            lastY = pos.y;
+            statusEl.innerHTML = '🎨 Рисуем... <span class="drawing-indicator"></span>';
+        }
+
+        function draw(e) {
+            if (!drawing) return;
+            e.preventDefault();
+            
+            const pos = getCanvasCoordinates(e);
+            
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            
+            lastX = pos.x;
+            lastY = pos.y;
+        }
+
+        function stopDrawing() {
+            drawing = false;
+            statusEl.innerHTML = 'Рисуй розовым ✨ <span class="drawing-indicator"></span>';
+        }
+
+        // ===== Вибрация =====
+        function sendVibration() {
+            // Вибрация на устройстве
+            if (navigator.vibrate) {
+                navigator.vibrate([100, 50, 100, 50, 200]);
+            }
+            
+            statusEl.innerHTML = '💫 Вибрация отправлена! <span class="drawing-indicator"></span>';
+            
+            setTimeout(() => {
+                statusEl.innerHTML = 'Рисуй розовым ✨ <span class="drawing-indicator"></span>';
+            }, 1000);
+            
+            // Здесь бот получит сигнал
+            if (window.Telegram?.WebApp) {
+                window.Telegram.WebApp.sendData(JSON.stringify({
+                    type: 'vibrate'
+                }));
+            }
+        }
+
+        // Двойное нажатие для вибрации
+        function handleDoubleTap() {
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTap;
+            
+            if (tapLength < 300 && tapLength > 0) {
+                sendVibration();
+            }
+            lastTap = currentTime;
+        }
+
+        // ===== Очистка холста =====
+        function clearCanvas() {
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            statusEl.innerHTML = '✨ Холст очищен <span class="drawing-indicator"></span>';
+            
+            setTimeout(() => {
+                statusEl.innerHTML = 'Рисуй розовым ✨ <span class="drawing-indicator"></span>';
+            }, 1000);
+            
+            // Отправляем сигнал о очистке
+            if (window.Telegram?.WebApp) {
+                window.Telegram.WebApp.sendData(JSON.stringify({
+                    type: 'clear'
+                }));
+            }
+        }
+
+        // ===== Telegram Web App =====
+        if (window.Telegram?.WebApp) {
+            const tg = window.Telegram.WebApp;
+            tg.expand();
+            tg.ready();
+            
+            // Получение данных от второго игрока
+            tg.onEvent('webAppData', function(data) {
+                try {
+                    const received = JSON.parse(data);
+                    
+                    if (received.type === 'draw') {
+                        // Рисуем то, что нарисовал партнер
+                        ctx.beginPath();
+                        ctx.moveTo(received.lastX, received.lastY);
+                        ctx.lineTo(received.x, received.y);
+                        ctx.stroke();
+                        
+                        statusEl.innerHTML = '👀 Видим рисунок! <span class="drawing-indicator"></span>';
+                        setTimeout(() => {
+                            statusEl.innerHTML = 'Рисуй розовым ✨ <span class="drawing-indicator"></span>';
+                        }, 500);
+                        
+                    } else if (received.type === 'clear') {
+                        ctx.fillStyle = '#000000';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        
+                        statusEl.innerHTML = '🧹 Партнер очистил холст <span class="drawing-indicator"></span>';
+                        setTimeout(() => {
+                            statusEl.innerHTML = 'Рисуй розовым ✨ <span class="drawing-indicator"></span>';
+                        }, 1000);
+                        
+                    } else if (received.type === 'vibrate') {
+                        if (navigator.vibrate) {
+                            navigator.vibrate([100, 50, 100]);
+                        }
+                        
+                        statusEl.innerHTML = '💓 Получена вибрация! <span class="drawing-indicator"></span>';
+                        setTimeout(() => {
+                            statusEl.innerHTML = 'Рисуй розовым ✨ <span class="drawing-indicator"></span>';
+                        }, 1000);
+                    }
+                } catch(e) {
+                    console.log('Ошибка получения данных:', e);
+                }
+            });
+        } else {
+            console.log('Не в Telegram - работаем локально');
+            // Для теста без Telegram
+            statusEl.innerHTML = 'Тестовый режим (без Telegram) ⚠️';
+        }
+
+        // ===== Обработчики событий =====
+        
+        // Мышь
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseleave', stopDrawing);
+        
+        // Тач
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            startDrawing(e);
+        });
+        
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            draw(e);
+        });
+        
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            stopDrawing();
+            handleDoubleTap(); // Проверяем двойное нажатие
+        });
+        
+        canvas.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
+            stopDrawing();
+        });
+
+        // Отправка данных при рисовании (каждый штрих)
+        function sendDrawingData(x, y, lastX, lastY) {
+            if (window.Telegram?.WebApp) {
+                window.Telegram.WebApp.sendData(JSON.stringify({
+                    type: 'draw',
+                    x: x,
+                    y: y,
+                    lastX: lastX,
+                    lastY: lastY
+                }));
+            }
+        }
+
+        // Переопределяем draw для отправки данных
+        const originalDraw = draw;
+        draw = function(e) {
+            if (!drawing) return;
+            e.preventDefault();
+            
+            const pos = getCanvasCoordinates(e);
+            
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            
+            // Отправляем данные
+            sendDrawingData(pos.x, pos.y, lastX, lastY);
+            
+            lastX = pos.x;
+            lastY = pos.y;
+        };
+        
+        // Подменяем функцию
+        canvas.removeEventListener('mousemove', draw);
+        canvas.removeEventListener('touchmove', draw);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('touchmove', draw);
+    </script>
+</body>
+</html>
