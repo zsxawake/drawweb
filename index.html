@@ -1,486 +1,580 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>неоновая мазня · коллективный рисунок</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>✨ Неоновое рисование ✨</title>
     <style>
+        /* СБРОС И БАЗОВЫЕ СТИЛИ */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            background: #0b0b0f;
+            background: #000;
             min-height: 100vh;
             display: flex;
-            align-items: center;
             justify-content: center;
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            touch-action: none; /* Важно для мобильных: отключает прокрутку */
         }
 
-        /* главный контейнер — розовое неоновое свечение */
-        .canvas-wrapper {
-            background: #0e0e12;
-            border-radius: 2.5rem;
-            padding: 1.2rem;
-            box-shadow: 
-                0 0 8px #ff3eb5,
-                0 0 20px #ff3eb5,
-                0 0 40px #ff3eb5,
-                inset 0 0 6px #ff80c6;
-            border: 1px solid #ffa0da;
+        .container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: #000;
+            position: relative;
         }
 
-        /* верхняя панель — розовый неон */
-        .toolbar {
+        /* ВЕРХНЯЯ ПАНЕЛЬ С ИНФОРМАЦИЕЙ */
+        .info-panel {
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #ff69b4;
+            text-shadow: 0 0 8px #ff1493, 0 0 16px #ff1493;
+            font-size: 16px;
+            font-weight: 500;
+            border-bottom: 2px solid #ff1493;
+            box-shadow: 0 0 15px rgba(255, 20, 147, 0.5);
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 10;
+        }
+
+        .users-count {
             display: flex;
             align-items: center;
-            gap: 1.5rem;
-            margin-bottom: 1.2rem;
-            padding: 0.4rem 1.2rem;
-            background: #12121a;
-            border-radius: 4rem;
-            border: 1px solid #ff50b0;
-            box-shadow: 0 0 12px #ff3eb5;
-            color: #ffc0eb;
-            font-weight: 400;
-            letter-spacing: 0.5px;
-            flex-wrap: wrap;
+            gap: 6px;
         }
 
-        .toolbar-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+        .users-count::before {
+            content: "👥";
+            font-size: 18px;
+            filter: drop-shadow(0 0 5px #ff69b4);
         }
 
-        .toolbar label {
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            color: #ffb0df;
-            text-shadow: 0 0 5px #ff6ec7;
-        }
-
-        /* неоновые контролы */
-        input[type="color"] {
-            width: 45px;
-            height: 38px;
-            border: 2px solid #ff7ac9;
-            border-radius: 50%;
-            background: black;
-            cursor: pointer;
-            box-shadow: 0 0 12px #ff3eb5;
-            padding: 2px;
-        }
-        input[type="color"]::-webkit-color-swatch-wrapper {
-            padding: 0;
-        }
-        input[type="color"]::-webkit-color-swatch {
-            border: none;
-            border-radius: 50%;
-        }
-
-        /* диапазон толщины */
-        .slider-container {
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-        }
-        input[type="range"] {
-            width: 120px;
-            height: 6px;
-            background: #2a1a2a;
-            border-radius: 10px;
-            -webkit-appearance: none;
-            appearance: none;
-            outline: none;
-            box-shadow: 0 0 8px #ff4db2;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 20px;
-            height: 20px;
-            background: #ff24a7;
-            border-radius: 50%;
-            border: 2px solid black;
-            box-shadow: 0 0 14px #ff80c6;
-            cursor: pointer;
-            transition: 0.1s;
-        }
-        #lineWidthValue {
-            min-width: 2.5rem;
-            color: #ffb8e5;
-            text-shadow: 0 0 6px magenta;
-            font-weight: bold;
-        }
-
-        /* кнопки в неоне */
-        .neon-btn {
+        .clear-btn {
             background: transparent;
-            border: 1.5px solid #ff7ac9;
-            color: #ffb8e5;
-            padding: 0.5rem 1.4rem;
-            border-radius: 3rem;
-            font-weight: 600;
-            font-size: 0.85rem;
+            border: 2px solid #ff1493;
+            color: #ff69b4;
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 1px;
+            box-shadow: 0 0 12px #ff1493;
             cursor: pointer;
-            box-shadow: 0 0 10px #ff3eb5;
             transition: all 0.2s;
+            touch-action: manipulation;
+        }
+
+        .clear-btn:active {
+            background: #ff1493;
+            color: #000;
+            transform: scale(0.95);
+        }
+
+        /* ОСНОВНАЯ ОБЛАСТЬ С ХОЛСТОМ */
+        .canvas-wrapper {
+            flex: 1;
+            position: relative;
+            background: #000;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            touch-action: none; /* Для рисования пальцем */
+            cursor: crosshair;
+        }
+
+        /* ПОДСКАЗКА ДЛЯ МОБИЛЬНЫХ */
+        .hint {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: #ff69b4;
+            font-size: 14px;
+            opacity: 0.7;
+            text-shadow: 0 0 5px #ff1493;
+            pointer-events: none;
+            background: rgba(0,0,0,0.5);
+            padding: 8px;
             backdrop-filter: blur(2px);
         }
-        .neon-btn:hover {
-            background: #ff3eb5;
-            color: black;
-            border-color: #ffc0eb;
-            box-shadow: 0 0 24px #ff66c7;
-        }
 
-        /* холст — чёрный глянец + неоновая рамка */
-        #boardCanvas {
-            display: block;
-            width: 800px;
-            height: 500px;
-            background: #000000;  /* абсолютно чёрный */
-            border-radius: 2rem;
-            border: 3px solid #ff50b0;
-            box-shadow: 
-                0 0 20px #ff3eb5,
-                inset 0 0 20px #ff3eb5;
-            cursor: crosshair;
-            touch-action: none; /* для мобильных */
-        }
-
-        /* статистика: кто онлайн */
-        .online-indicator {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            margin-left: auto;
-            background: #1d1220;
-            padding: 0.3rem 1.5rem 0.3rem 1.2rem;
-            border-radius: 3rem;
-            border: 1px solid #ff6eb5;
-            box-shadow: 0 0 16px #ff3eb5;
-        }
-        .pulse-dot {
-            width: 12px;
-            height: 12px;
-            background: #ff1a9f;
-            border-radius: 50%;
-            box-shadow: 0 0 12px #ff80d0;
-            animation: pulse 1.8s infinite;
-        }
-        @keyframes pulse {
-            0% { opacity: 0.6; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.2); background: #ff80d0; }
-            100% { opacity: 0.6; transform: scale(1); }
-        }
-
-        /* маленькие информационные сообщения */
-        .status-tip {
-            font-size: 0.8rem;
-            color: #ffa8df;
-            text-shadow: 0 0 4px #f0f;
-            margin-left: 1rem;
+        @media (min-width: 768px) {
+            .hint {
+                bottom: 30px;
+                font-size: 16px;
+            }
         }
     </style>
 </head>
 <body>
-<div class="canvas-wrapper">
-    <!-- панель инструментов (розовый неон) -->
-    <div class="toolbar">
-        <div class="toolbar-item">
-            <label>🎨 цвет</label>
-            <input type="color" id="colorPicker" value="#ff44b5">
+    <div class="container">
+        <div class="info-panel">
+            <div class="users-count" id="userCount">👤 1 online</div>
+            <button class="clear-btn" id="clearBtn">✨ Очистить</button>
         </div>
-        <div class="toolbar-item slider-container">
-            <label>🔘 кисть</label>
-            <input type="range" id="lineWidth" min="2" max="40" value="8" step="1">
-            <span id="lineWidthValue">8px</span>
+        
+        <div class="canvas-wrapper">
+            <canvas id="drawCanvas"></canvas>
         </div>
-        <button class="neon-btn" id="clearBtn">✨ очистить</button>
-        <div class="online-indicator">
-            <span class="pulse-dot"></span>
-            <span id="onlineCount" style="color:#ffbfe6; text-shadow:0 0 8px #ff70c7;">2 онлайн</span>
+        
+        <div class="hint" id="hintText">
+            👆 Рисуй пальцем — видно всем!
         </div>
-        <span class="status-tip">👆 рисуй — видно всем</span>
     </div>
-    <!-- основной чёрный холст для рисования -->
-    <canvas id="boardCanvas" width="800" height="500"></canvas>
-</div>
 
-<script>
-    (function() {
-        // --- настройки и элементы ---
-        const canvas = document.getElementById('boardCanvas');
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    <script>
+        (function() {
+            // =========================================
+            // НАСТРОЙКИ
+            // =========================================
+            const STORAGE_KEY = 'neon_drawing_data';
+            const BROADCAST_CHANNEL_NAME = 'neon_draw_channel';
+            
+            // Цвета кисти (розовый неон)
+            const COLORS = {
+                STROKE: '#ff69b4',      // Основной розовый
+                SHADOW: '#ff1493',       // Темно-розовый для свечения
+                BACKGROUND: '#000000'
+            };
 
-        // цвета и кисть
-        const colorPicker = document.getElementById('colorPicker');
-        const lineWidthInput = document.getElementById('lineWidth');
-        const lineWidthSpan = document.getElementById('lineWidthValue');
+            // =========================================
+            // ПОЛУЧАЕМ ЭЛЕМЕНТЫ
+            // =========================================
+            const canvas = document.getElementById('drawCanvas');
+            const ctx = canvas.getContext('2d', { 
+                willReadFrequently: false,
+                alpha: false 
+            });
+            
+            const userCountEl = document.getElementById('userCount');
+            const clearBtn = document.getElementById('clearBtn');
+            const hintEl = document.getElementById('hintText');
 
-        // кнопка очистки
-        const clearBtn = document.getElementById('clearBtn');
+            // =========================================
+            // ПЕРЕМЕННЫЕ СОСТОЯНИЯ
+            // =========================================
+            let isDrawing = false;
+            let lastX = 0;
+            let lastY = 0;
+            let canvasWidth = 0;
+            let canvasHeight = 0;
+            let drawingEnabled = true;     // Рисование всегда включено
+            let userName = 'User_' + Math.floor(Math.random() * 1000);
+            let activeUsers = new Set();
+            
+            // Добавляем себя в список пользователей
+            activeUsers.add(userName);
 
-        // элемент отображения онлайна
-        const onlineSpan = document.getElementById('onlineCount');
-
-        // --- состояние рисования ---
-        let drawing = false;
-        let lastX = 0, lastY = 0;
-        let currentColor = colorPicker.value;        // '#ff44b5'
-        let currentWidth = parseInt(lineWidthInput.value, 10);
-
-        // --- эмуляция "других пользователей" + реальное совместное рисование ---
-        // В этом примере все подключившиеся вкладки/пользователи видят рисунки друг друга
-        // через канал BroadcastChannel (работает в реальном времени, если сайт открыт в нескольких вкладках)
-        // Для работы на разных компьютерах потребовался бы WebSocket, но условие — "сайт в реальном времени люди могут рисовать и это видно всем"
-        // BroadcastChannel идеально подходит для демонстрации на локальном / одном браузере (вкладки).
-        // При желании можно заменить на WebSocket, но оставим так, чтобы сразу работало.
-
-        let channel; // инициализируем позже, после проверки поддержки
-
-        // Уникальный идентификатор сессии (для "онлайн" счётчика)
-        const sessionId = Math.random().toString(36).substring(2, 8) + Date.now().toString(36);
-        let onlineUsers = new Set(); // будем хранить sessionId других вкладок
-        onlineUsers.add(sessionId);  // саму себя тоже добавим
-
-        // обновление отображения количества онлайн
-        function updateOnlineCount() {
-            const count = onlineUsers.size;
-            onlineSpan.textContent = count + ' онлайн';
-        }
-
-        // --- широковещательный канал (неоновая синхронизация) ---
-        try {
-            channel = new BroadcastChannel('neon_draw_channel');
-
-            // слушаем сообщения
-            channel.onmessage = (e) => {
-                const data = e.data;
-
-                if (data.type === 'draw') {
-                    // рисуем штрих от другого пользователя
-                    drawLine(
-                        data.x0, data.y0,
-                        data.x1, data.y1,
-                        data.color,
-                        data.width
-                    );
-                } else if (data.type === 'clear') {
-                    // очистка холста
-                    clearCanvas(true); // true = не рассылать повторно
-                } else if (data.type === 'join') {
-                    // новый пользователь (или пинг)
-                    const remoteSession = data.sessionId;
-                    if (remoteSession !== sessionId) {
-                        onlineUsers.add(remoteSession);
-                        updateOnlineCount();
-
-                        // также отвечаем приветом, чтобы новый участник узнал о нас
-                        channel.postMessage({
-                            type: 'join_ack',
-                            sessionId: sessionId
-                        });
-                    }
-                } else if (data.type === 'join_ack') {
-                    const remoteSession = data.sessionId;
-                    if (remoteSession !== sessionId) {
-                        onlineUsers.add(remoteSession);
-                        updateOnlineCount();
-                    }
-                } else if (data.type === 'leave') {
-                    // кто-то закрыл вкладку
-                    const remoteSession = data.sessionId;
-                    if (onlineUsers.has(remoteSession)) {
-                        onlineUsers.delete(remoteSession);
-                        updateOnlineCount();
-                    }
+            // =========================================
+            // ИНИЦИАЛИЗАЦИЯ КАНАЛА СВЯЗИ (BroadcastChannel)
+            // =========================================
+            const channel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
+            
+            // Обработчик входящих сообщений
+            channel.onmessage = (event) => {
+                const data = event.data;
+                
+                if (!data || !data.type) return;
+                
+                switch(data.type) {
+                    case 'draw':
+                        // Рисуем линию от другого пользователя
+                        if (data.data && data.data.x0 !== undefined) {
+                            drawLineFromData(data.data);
+                        }
+                        break;
+                        
+                    case 'clear':
+                        // Очищаем холст
+                        clearCanvas(true); // true = не отправлять повторно команду
+                        break;
+                        
+                    case 'user_joined':
+                        // Обновляем список пользователей
+                        if (data.user && data.user !== userName) {
+                            activeUsers.add(data.user);
+                            updateUserCount();
+                        }
+                        break;
+                        
+                    case 'user_left':
+                        if (data.user) {
+                            activeUsers.delete(data.user);
+                            updateUserCount();
+                        }
+                        break;
+                        
+                    case 'sync_request':
+                        // Новый пользователь запрашивает текущее состояние
+                        if (data.requester && data.requester !== userName) {
+                            // Отправляем текущее изображение
+                            sendCanvasImage();
+                        }
+                        break;
+                        
+                    case 'sync_image':
+                        // Получаем изображение для синхронизации
+                        if (data.imageData) {
+                            restoreCanvasFromDataURL(data.imageData);
+                        }
+                        break;
                 }
             };
 
-            // при подключении оповестить всех о себе
-            channel.postMessage({
-                type: 'join',
-                sessionId: sessionId
-            });
+            // =========================================
+            // ФУНКЦИИ ОБНОВЛЕНИЯ ПОЛЬЗОВАТЕЛЕЙ
+            // =========================================
+            function updateUserCount() {
+                const count = activeUsers.size;
+                userCountEl.textContent = `👥 ${count} online`;
+                
+                // Обновляем подсказку
+                if (count > 1) {
+                    hintEl.textContent = `🎨 Рисуют ${count} человек — всё синхронно!`;
+                } else {
+                    hintEl.textContent = '👆 Рисуй пальцем — видно всем!';
+                }
+            }
 
-            // также раз в 5 сек посылаем пинг, чтобы держали в сете (необязательно, но надёжно)
-            const pingInterval = setInterval(() => {
-                channel.postMessage({
-                    type: 'join',
-                    sessionId: sessionId
-                });
-            }, 4000);
+            // Уведомляем о новом пользователе
+            function announceJoin() {
+                setTimeout(() => {
+                    channel.postMessage({
+                        type: 'user_joined',
+                        user: userName
+                    });
+                    
+                    // Запрашиваем синхронизацию
+                    channel.postMessage({
+                        type: 'sync_request',
+                        requester: userName
+                    });
+                }, 300);
+            }
 
-            // при закрытии страницы говорим, что уходим
+            // Уведомляем об уходе пользователя (при закрытии вкладки)
             window.addEventListener('beforeunload', () => {
                 channel.postMessage({
-                    type: 'leave',
-                    sessionId: sessionId
-                });
-                // небольшой костыль: браузер может не успеть, но в целом норм
-            });
-
-            // фикс для мобильных / закрытий
-            window.addEventListener('pagehide', () => {
-                channel.postMessage({
-                    type: 'leave',
-                    sessionId: sessionId
+                    type: 'user_left',
+                    user: userName
                 });
             });
 
-        } catch (e) {
-            console.warn('broadcastchannel не поддерживается, рисование только локально', e);
-            // если не работает — просто нет синхронизации между вкладками, но сам холст работает
-        }
-
-        // --- рисование линии (чистая функция) ---
-        function drawLine(x0, y0, x1, y1, color, width) {
-            ctx.beginPath();
-            ctx.strokeStyle = color;
-            ctx.lineWidth = width;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.moveTo(x0, y0);
-            ctx.lineTo(x1, y1);
-            ctx.stroke();
-        }
-
-        // --- очистка холста (с опцией не отправлять эхо) ---
-        function clearCanvas(skipBroadcast = false) {
-            // очищаем всё на чёрный
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            // заливка чёрным на всякий случай (хотя clearRect и так делает прозрачным, но фон ч/з css черный, а нам нужен именно чёрный холст)
-            ctx.fillStyle = '#000000';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            // дополнительно можно нарисовать неоновую точку для красоты, но не обязательно
-
-            if (!skipBroadcast && channel) {
-                channel.postMessage({ type: 'clear' });
-            }
-        }
-
-        // --- первоначальная заливка чёрным ---
-        ctx.fillStyle = '#000000';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // --- обновление отображения толщины ---
-        lineWidthInput.addEventListener('input', (e) => {
-            currentWidth = parseInt(e.target.value, 10);
-            lineWidthSpan.textContent = currentWidth + 'px';
-        });
-
-        // --- смена цвета ---
-        colorPicker.addEventListener('input', (e) => {
-            currentColor = e.target.value;
-        });
-
-        // --- обработчики мыши / касаний ---
-        function getCanvasCoords(e) {
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;   // соотношение логического размера к css
-            const scaleY = canvas.height / rect.height;
-
-            let clientX, clientY;
-
-            if (e.touches) {
-                // сенсорное событие
-                clientX = e.touches[0].clientX;
-                clientY = e.touches[0].clientY;
-            } else {
-                clientX = e.clientX;
-                clientY = e.clientY;
+            // =========================================
+            // НАСТРОЙКА ХОЛСТА
+            // =========================================
+            function resizeCanvas() {
+                const wrapper = canvas.parentElement;
+                if (!wrapper) return;
+                
+                canvasWidth = wrapper.clientWidth;
+                canvasHeight = wrapper.clientHeight;
+                
+                // Сохраняем текущее изображение
+                const currentImage = new Image();
+                currentImage.src = canvas.toDataURL('image/png');
+                
+                // Меняем размер
+                canvas.width = canvasWidth;
+                canvas.height = canvasHeight;
+                
+                // Восстанавливаем фон и стили
+                ctx.fillStyle = COLORS.BACKGROUND;
+                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+                
+                // Настройки кисти
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.strokeStyle = COLORS.STROKE;
+                ctx.lineWidth = Math.max(5, Math.min(15, canvasWidth / 40));
+                ctx.shadowColor = COLORS.SHADOW;
+                ctx.shadowBlur = 15;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+                
+                // Восстанавливаем изображение после изменения размера
+                currentImage.onload = () => {
+                    ctx.drawImage(currentImage, 0, 0, canvasWidth, canvasHeight);
+                };
+                
+                // Если изображение не загрузилось, просто оставляем черный фон
             }
 
-            const x = (clientX - rect.left) * scaleX;
-            const y = (clientY - rect.top) * scaleY;
+            // =========================================
+            // ФУНКЦИИ РИСОВАНИЯ
+            // =========================================
+            function startDrawing(e) {
+                e.preventDefault();
+                if (!drawingEnabled) return;
+                
+                isDrawing = true;
+                
+                const coords = getCoordinates(e);
+                if (!coords) return;
+                
+                lastX = coords.x;
+                lastY = coords.y;
+                
+                // Рисуем точку при касании
+                ctx.beginPath();
+                ctx.arc(lastX, lastY, ctx.lineWidth / 2, 0, Math.PI * 2);
+                ctx.fillStyle = COLORS.STROKE;
+                ctx.shadowColor = COLORS.SHADOW;
+                ctx.shadowBlur = 15;
+                ctx.fill();
+                
+                // Отправляем точку
+                sendDrawData(lastX, lastY, lastX, lastY, true);
+            }
 
-            // ограничим краями холста
-            return {
-                x: Math.min(canvas.width - 1, Math.max(0, x)),
-                y: Math.min(canvas.height - 1, Math.max(0, y))
-            };
-        }
+            function draw(e) {
+                e.preventDefault();
+                if (!isDrawing || !drawingEnabled) return;
+                
+                const coords = getCoordinates(e);
+                if (!coords) return;
+                
+                const x = coords.x;
+                const y = coords.y;
+                
+                if (x < 0 || x > canvasWidth || y < 0 || y > canvasHeight) {
+                    stopDrawing();
+                    return;
+                }
+                
+                // Рисуем линию
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                
+                // Отправляем данные о линии
+                sendDrawData(lastX, lastY, x, y, false);
+                
+                lastX = x;
+                lastY = y;
+            }
 
-        function startDrawing(e) {
-            e.preventDefault();
-            drawing = true;
-            const coords = getCanvasCoords(e);
-            lastX = coords.x;
-            lastY = coords.y;
-        }
+            function stopDrawing() {
+                isDrawing = false;
+                ctx.beginPath(); // Начинаем новый путь для следующей линии
+            }
 
-        function draw(e) {
-            e.preventDefault();
-            if (!drawing) return;
+            // Получение координат с учетом touch и mouse
+            function getCoordinates(e) {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                
+                let clientX, clientY;
+                
+                if (e.touches) {
+                    if (e.touches.length === 0) return null;
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                } else {
+                    clientX = e.clientX;
+                    clientY = e.clientY;
+                }
+                
+                // Проверяем, что координаты в пределах холста
+                if (clientX < rect.left || clientX > rect.right || 
+                    clientY < rect.top || clientY > rect.bottom) {
+                    return null;
+                }
+                
+                const x = (clientX - rect.left) * scaleX;
+                const y = (clientY - rect.top) * scaleY;
+                
+                return {
+                    x: Math.max(0, Math.min(canvasWidth, x)),
+                    y: Math.max(0, Math.min(canvasHeight, y))
+                };
+            }
 
-            const coords = getCanvasCoords(e);
-            const currentX = coords.x;
-            const currentY = coords.y;
-
-            // рисуем на своём холсте
-            drawLine(lastX, lastY, currentX, currentY, currentColor, currentWidth);
-
-            // отправляем другим (broadcast)
-            if (channel) {
+            // =========================================
+            // ОТПРАВКА ДАННЫХ
+            // =========================================
+            function sendDrawData(x0, y0, x1, y1, isDot) {
+                const drawData = {
+                    x0: Math.round(x0),
+                    y0: Math.round(y0),
+                    x1: Math.round(x1),
+                    y1: Math.round(y1),
+                    isDot: isDot || false,
+                    lineWidth: ctx.lineWidth,
+                    user: userName,
+                    timestamp: Date.now()
+                };
+                
                 channel.postMessage({
                     type: 'draw',
-                    x0: lastX,
-                    y0: lastY,
-                    x1: currentX,
-                    y1: currentY,
-                    color: currentColor,
-                    width: currentWidth
+                    data: drawData
                 });
             }
 
-            lastX = currentX;
-            lastY = currentY;
-        }
-
-        function stopDrawing(e) {
-            drawing = false;
-        }
-
-        // навешиваем события мыши
-        canvas.addEventListener('mousedown', startDrawing);
-        canvas.addEventListener('mousemove', draw);
-        canvas.addEventListener('mouseup', stopDrawing);
-        canvas.addEventListener('mouseleave', stopDrawing);
-
-        // тач-события (мобильные)
-        canvas.addEventListener('touchstart', startDrawing, { passive: false });
-        canvas.addEventListener('touchmove', draw, { passive: false });
-        canvas.addEventListener('touchend', stopDrawing);
-        canvas.addEventListener('touchcancel', stopDrawing);
-
-        // кнопка очистки
-        clearBtn.addEventListener('click', () => {
-            clearCanvas(false); // false — отправить остальным
-        });
-
-        // при первом запуске заполним онлайн-сет (сами себя)
-        updateOnlineCount();
-
-        // для наглядности: если нет broadcast, можно хотя бы фейковый онлайн (но у нас есть BroadcastChannel)
-        // дополнительная имитация: по таймеру пульс
-        setInterval(() => {
-            if (onlineUsers.size < 2 && channel) {
-                // ничего не делаем, пусть остаётся как есть (если нет других вкладок, показываем 1)
+            // Рисование линии из полученных данных
+            function drawLineFromData(data) {
+                if (!data || !data.x0 || !data.y0) return;
+                
+                // Сохраняем текущие настройки
+                const currentStrokeStyle = ctx.strokeStyle;
+                const currentShadowColor = ctx.shadowColor;
+                const currentShadowBlur = ctx.shadowBlur;
+                const currentLineWidth = ctx.lineWidth;
+                
+                // Устанавливаем настройки для полученной линии
+                ctx.strokeStyle = COLORS.STROKE;
+                ctx.shadowColor = COLORS.SHADOW;
+                ctx.shadowBlur = 15;
+                ctx.lineWidth = data.lineWidth || 5;
+                
+                if (data.isDot) {
+                    // Рисуем точку
+                    ctx.beginPath();
+                    ctx.arc(data.x0, data.y0, ctx.lineWidth / 2, 0, Math.PI * 2);
+                    ctx.fillStyle = COLORS.STROKE;
+                    ctx.fill();
+                } else {
+                    // Рисуем линию
+                    ctx.beginPath();
+                    ctx.moveTo(data.x0, data.y0);
+                    ctx.lineTo(data.x1, data.y1);
+                    ctx.stroke();
+                }
+                
+                // Восстанавливаем настройки
+                ctx.strokeStyle = currentStrokeStyle;
+                ctx.shadowColor = currentShadowColor;
+                ctx.shadowBlur = currentShadowBlur;
+                ctx.lineWidth = currentLineWidth;
             }
-        }, 2000);
 
-        // так как broadcastchannel не работает между разными компьютерами, но по условию этого не требуется.
-        // для теста просто откройте несколько вкладок с этим сайтом — линии синхронизируются.
-        // дизайн розовый неон на черном холсте выполнен.
-    })();
-</script>
+            // =========================================
+            // СИНХРОНИЗАЦИЯ ХОЛСТА
+            // =========================================
+            function sendCanvasImage() {
+                try {
+                    const imageData = canvas.toDataURL('image/png');
+                    channel.postMessage({
+                        type: 'sync_image',
+                        imageData: imageData,
+                        user: userName
+                    });
+                } catch (e) {
+                    console.log('Ошибка синхронизации:', e);
+                }
+            }
+
+            function restoreCanvasFromDataURL(dataURL) {
+                const img = new Image();
+                img.src = dataURL;
+                img.onload = () => {
+                    // Очищаем холст
+                    ctx.fillStyle = COLORS.BACKGROUND;
+                    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+                    
+                    // Рисуем полученное изображение
+                    ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+                };
+            }
+
+            // =========================================
+            // ОЧИСТКА ХОЛСТА
+            // =========================================
+            function clearCanvas(fromBroadcast = false) {
+                ctx.fillStyle = COLORS.BACKGROUND;
+                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+                
+                if (!fromBroadcast) {
+                    // Отправляем команду очистки другим
+                    channel.postMessage({
+                        type: 'clear',
+                        user: userName
+                    });
+                }
+            }
+
+            // =========================================
+            // ПОДПИСКА НА СОБЫТИЯ
+            // =========================================
+            function setupEventListeners() {
+                // Мышь
+                canvas.addEventListener('mousedown', startDrawing);
+                canvas.addEventListener('mousemove', draw);
+                canvas.addEventListener('mouseup', stopDrawing);
+                canvas.addEventListener('mouseleave', stopDrawing);
+                
+                // Тач (мобильные)
+                canvas.addEventListener('touchstart', startDrawing, { passive: false });
+                canvas.addEventListener('touchmove', draw, { passive: false });
+                canvas.addEventListener('touchend', stopDrawing);
+                canvas.addEventListener('touchcancel', stopDrawing);
+                
+                // Очистка
+                clearBtn.addEventListener('click', () => clearCanvas(false));
+                
+                // Ресайз окна
+                window.addEventListener('resize', () => {
+                    resizeCanvas();
+                });
+                
+                // Запрещаем контекстное меню на холсте
+                canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+            }
+
+            // =========================================
+            // ЗАПУСК
+            // =========================================
+            function init() {
+                resizeCanvas();
+                setupEventListeners();
+                
+                // Оповещаем о себе
+                announceJoin();
+                
+                // Периодически обновляем синхронизацию (раз в 30 секунд)
+                setInterval(() => {
+                    if (activeUsers.size > 1) {
+                        sendCanvasImage();
+                    }
+                }, 30000);
+                
+                // Обновляем счетчик пользователей
+                updateUserCount();
+                
+                console.log('✨ Неоновое рисование запущено!');
+            }
+
+            // Стартуем после загрузки DOM
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+        })();
+    </script>
 </body>
 </html>
