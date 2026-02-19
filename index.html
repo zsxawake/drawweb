@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>💕 Совместное рисование</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>💕 Наше пространство</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;600;700&display=swap');
+        
         * {
             margin: 0;
             padding: 0;
@@ -14,396 +16,433 @@
         }
 
         body {
-            background: #1a1a1a;
+            min-height: 100vh;
+            background: radial-gradient(circle at 30% 30%, #2a1a2a, #0a0a0a);
+            font-family: 'Quicksand', sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            padding: 10px;
+            padding: 16px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Анимированные звездочки */
+        body::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;utf8,<svg width="30" height="30" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><circle cx="5" cy="5" r="1" fill="rgba(255,105,180,0.3)"/><circle cx="25" cy="15" r="1.5" fill="rgba(255,105,180,0.4)"/><circle cx="15" cy="25" r="1" fill="rgba(255,105,180,0.3)"/><circle cx="28" cy="28" r="1" fill="rgba(255,105,180,0.5)"/></svg>');
+            opacity: 0.5;
+            animation: twinkle 4s infinite alternate;
+            pointer-events: none;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.3; }
+            100% { opacity: 0.8; }
         }
 
         .container {
             width: 100%;
             max-width: 500px;
-            background: #222;
-            border-radius: 30px;
-            padding: 20px;
-            box-shadow: 0 10px 30px rgba(255,105,180,0.2);
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Неоновые лучи */
+        .glow-effect {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 50%, rgba(255,105,180,0.2), transparent 70%);
+            filter: blur(40px);
+            animation: glowPulse 3s infinite alternate;
+            pointer-events: none;
+        }
+
+        @keyframes glowPulse {
+            0% { opacity: 0.3; transform: scale(0.95); }
+            100% { opacity: 0.7; transform: scale(1.05); }
         }
 
         .header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
+            position: relative;
         }
 
         .header h1 {
-            color: #ff69b4;
-            font-size: 24px;
-            margin-bottom: 10px;
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff5f5, #ffb6c1, #ff69b4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(255,105,180,0.5);
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            animation: titleGlow 3s infinite alternate;
         }
 
-        .status-panel {
-            display: flex;
-            justify-content: space-between;
-            background: #2a2a2a;
-            padding: 12px;
-            border-radius: 20px;
-            margin-bottom: 20px;
-            color: #ff69b4;
-            font-size: 14px;
+        @keyframes titleGlow {
+            0% { text-shadow: 0 0 20px rgba(255,105,180,0.3); }
+            100% { text-shadow: 0 0 40px rgba(255,105,180,0.8); }
         }
 
-        .online-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
+        .header p {
+            color: rgba(255,182,193,0.9);
+            font-size: 16px;
+            font-weight: 300;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            animation: fadeInOut 3s infinite alternate;
         }
 
-        .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #4caf50;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
+        @keyframes fadeInOut {
+            0% { opacity: 0.5; }
             100% { opacity: 1; }
         }
 
-        .canvas-container {
-            background: black;
-            border-radius: 20px;
-            padding: 10px;
+        .glass-panel {
+            background: rgba(20, 10, 20, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,105,180,0.3);
+            border-radius: 40px;
+            padding: 20px;
+            box-shadow: 
+                0 0 40px rgba(255,105,180,0.2),
+                inset 0 0 30px rgba(255,105,180,0.1);
             margin-bottom: 20px;
-            border: 2px solid #ff69b4;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 12px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 50px;
+            border: 1px solid rgba(255,105,180,0.3);
+            backdrop-filter: blur(5px);
+        }
+
+        .user-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #ffb6c1;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .pulse-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ff69b4;
+            box-shadow: 0 0 15px #ff69b4;
+            animation: pulseDot 2s infinite;
+        }
+
+        @keyframes pulseDot {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            border-radius: 35px;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid rgba(255,105,180,0.5);
+            box-shadow: 
+                0 0 60px rgba(255,105,180,0.3),
+                inset 0 0 30px rgba(255,105,180,0.2);
+        }
+
+        .canvas-wrapper::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            border-radius: 40px;
+            background: linear-gradient(45deg, #ff69b4, #ff1493, #ff69b4);
+            opacity: 0.3;
+            z-index: -1;
+            filter: blur(10px);
+            animation: borderGlow 3s infinite alternate;
+        }
+
+        @keyframes borderGlow {
+            0% { opacity: 0.2; filter: blur(5px); }
+            100% { opacity: 0.5; filter: blur(15px); }
         }
 
         canvas {
             display: block;
             width: 100%;
             height: auto;
-            background: black;
-            border-radius: 15px;
+            background: #0a0a0a;
+            border-radius: 30px;
             touch-action: none;
             cursor: crosshair;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
         }
 
-        .buttons {
+        .tools {
             display: flex;
-            gap: 10px;
-            margin-top: 15px;
+            gap: 15px;
+            margin-top: 25px;
+            justify-content: center;
         }
 
-        button {
+        .tool-btn {
             flex: 1;
-            background: #ff69b4;
-            color: white;
+            max-width: 180px;
+            padding: 18px 0;
             border: none;
-            padding: 15px;
-            border-radius: 30px;
-            font-size: 16px;
-            font-weight: bold;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 600;
+            font-family: 'Quicksand', sans-serif;
+            color: white;
+            background: linear-gradient(145deg, #ff1493, #ff69b4);
+            box-shadow: 
+                0 10px 25px rgba(255,20,147,0.4),
+                0 0 30px rgba(255,105,180,0.4);
             cursor: pointer;
             touch-action: manipulation;
-            transition: transform 0.2s;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
-        button:active {
+        .tool-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .tool-btn:hover::before {
+            left: 100%;
+        }
+
+        .tool-btn:active {
             transform: scale(0.95);
+            box-shadow: 0 5px 15px rgba(255,20,147,0.6);
         }
 
-        .clear-btn {
-            background: #333;
-            border: 1px solid #ff69b4;
+        .tool-btn.clear {
+            background: linear-gradient(145deg, #2a1a2a, #1a1a1a);
+            border: 2px solid #ff69b4;
+            box-shadow: 0 10px 25px rgba(255,105,180,0.2);
         }
 
-        .debug-panel {
-            margin-top: 15px;
-            padding: 10px;
-            background: #2a2a2a;
-            border-radius: 10px;
+        /* Анимированная подсказка */
+        .hint {
+            text-align: center;
+            margin-top: 20px;
+            color: rgba(255,182,193,0.6);
+            font-size: 14px;
+            font-weight: 300;
+            animation: hintFloat 3s infinite alternate;
+        }
+
+        @keyframes hintFloat {
+            0% { transform: translateY(0); opacity: 0.5; }
+            100% { transform: translateY(-5px); opacity: 1; }
+        }
+
+        .hint span {
             color: #ff69b4;
-            font-size: 12px;
-            max-height: 100px;
-            overflow-y: auto;
-            display: none; /* Скрыто по умолчанию */
+            font-weight: 600;
+        }
+
+        /* Эффект свечения для статуса */
+        .glow-text {
+            text-shadow: 0 0 15px currentColor;
+        }
+
+        /* Иконки */
+        .icon {
+            font-size: 22px;
+            filter: drop-shadow(0 0 8px rgba(255,105,180,0.8));
+        }
+
+        /* Адаптация для маленьких экранов */
+        @media (max-width: 400px) {
+            .header h1 { font-size: 28px; }
+            .tool-btn { font-size: 16px; padding: 15px 0; }
         }
     </style>
 </head>
 <body>
+    <div class="glow-effect"></div>
+    
     <div class="container">
         <div class="header">
-            <h1>🎨 Рисуем вместе</h1>
+            <h1>для двоих</h1>
+            <p>наше маленькое пространство</p>
         </div>
 
-        <div class="status-panel">
-            <span id="myStatus">👤 Ты: активен</span>
-            <div class="online-status">
-                <span id="partnerStatus">👥 Партнер: офлайн</span>
-                <span class="dot" id="onlineDot"></span>
+        <div class="glass-panel">
+            <div class="status-bar">
+                <div class="user-status">
+                    <span class="icon">✨</span>
+                    <span id="myStatus">рисуешь ты</span>
+                </div>
+                <div class="user-status">
+                    <span class="pulse-dot"></span>
+                    <span id="partnerStatus">ждем</span>
+                </div>
+            </div>
+
+            <div class="canvas-wrapper">
+                <canvas id="canvas" width="500" height="500"></canvas>
+            </div>
+
+            <div class="tools">
+                <button class="tool-btn" id="vibrateBtn">
+                    <span class="icon">📱</span>
+                    вибрация
+                </button>
+                <button class="tool-btn clear" id="clearBtn">
+                    <span class="icon">🧹</span>
+                    очистить
+                </button>
+            </div>
+
+            <div class="hint">
+                <span>💕</span> двойное касание — вибрация <span>💕</span>
             </div>
         </div>
-
-        <div class="canvas-container">
-            <canvas id="canvas" width="500" height="500"></canvas>
-        </div>
-
-        <div class="buttons">
-            <button id="vibrateBtn">📱 Вибрация</button>
-            <button id="clearBtn" class="clear-btn">🧹 Очистить</button>
-        </div>
-
-        <!-- Панель отладки (для поиска ошибок) -->
-        <div class="debug-panel" id="debug"></div>
     </div>
 
     <script>
-        // ========== ПАНЕЛЬ ОТЛАДКИ ==========
-        const debug = document.getElementById('debug');
-        function log(msg) {
-            console.log(msg);
-            debug.style.display = 'block';
-            debug.innerHTML += '> ' + msg + '<br>';
-        }
-
-        // ========== НАСТРОЙКИ SUPABASE ==========
-        // 👇 ВСТАВЬ СВОИ ДАННЫЕ СЮДА 👇
-        const SUPABASE_URL = 'https://tcqyaoniyniagvfpecpr.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjcXlhb25peW5pYWd2ZnBlY3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0NjY1NTAsImV4cCI6MjA4NzA0MjU1MH0.TEfz5MvlC5DfiTlN2EUULYCLXsfD3zAteDp8d-Y3OxY';
-        
-        log('Supabase URL: ' + SUPABASE_URL);
-        log('Supabase Key: ' + SUPABASE_KEY);
-
-        // ========== ПОДКЛЮЧЕНИЕ К SUPABASE ==========
-        let supabase;
-        try {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            log('✅ Supabase подключен');
-        } catch (e) {
-            log('❌ Ошибка подключения Supabase: ' + e.message);
-        }
-
-        // ========== НАСТРОЙКИ ХОЛСТА ==========
+        // ===== ХОЛСТ =====
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         
-        // Убедимся что canvas работает
-        if (!ctx) {
-            log('❌ Canvas не поддерживается');
-        } else {
-            log('✅ Canvas готов');
-        }
-        
-        // Настройки рисования
+        // Настройки
         ctx.strokeStyle = '#ff69b4';
         ctx.lineWidth = 8;
         ctx.lineCap = 'round';
-        ctx.fillStyle = 'black';
+        ctx.shadowColor = '#ff69b4';
+        ctx.shadowBlur = 15;
+        
+        // Фон
+        ctx.fillStyle = '#0a0a0a';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // ========== ПЕРЕМЕННЫЕ ==========
-        const userId = 'user_' + Math.random().toString(36).substr(2, 9);
+        
+        // ===== ПЕРЕМЕННЫЕ =====
         let drawing = false;
         let lastX = 0;
         let lastY = 0;
-        let channel = null;
-
-        log('Мой ID: ' + userId);
-
-        // ========== ПОДКЛЮЧЕНИЕ К КОМНАТЕ ==========
-        async function connectToRoom() {
-            try {
-                channel = supabase.channel('drawing-room', {
-                    config: {
-                        broadcast: { self: true }
-                    }
-                });
-
-                // Слушаем события рисования
-                channel.on('broadcast', { event: 'draw' }, (payload) => {
-                    const data = payload.payload;
-                    if (data.userId !== userId) {
-                        ctx.beginPath();
-                        ctx.moveTo(data.lastX, data.lastY);
-                        ctx.lineTo(data.x, data.y);
-                        ctx.stroke();
-                        document.getElementById('partnerStatus').innerHTML = '👥 Партнер: рисует';
-                    }
-                });
-
-                // Слушаем вибрацию
-                channel.on('broadcast', { event: 'vibrate' }, () => {
-                    if (navigator.vibrate) {
-                        navigator.vibrate([100, 50, 100]);
-                    }
-                    document.getElementById('partnerStatus').innerHTML = '👥 Партнер: 📱 вибрация';
-                });
-
-                // Слушаем очистку
-                channel.on('broadcast', { event: 'clear' }, () => {
-                    ctx.fillStyle = 'black';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    document.getElementById('partnerStatus').innerHTML = '👥 Партнер: 🧹 очистил';
-                });
-
-                // Отслеживаем онлайн статус
-                channel.on('presence', { event: 'sync' }, () => {
-                    const presence = channel.presenceState();
-                    const count = Object.keys(presence).length;
-                    if (count >= 2) {
-                        document.getElementById('onlineDot').style.background = '#4caf50';
-                        document.getElementById('partnerStatus').innerHTML = '👥 Партнер: онлайн';
-                    } else {
-                        document.getElementById('onlineDot').style.background = '#666';
-                        document.getElementById('partnerStatus').innerHTML = '👥 Партнер: офлайн';
-                    }
-                });
-
-                // Подписываемся
-                await channel.subscribe(async (status) => {
-                    log('Статус подписки: ' + status);
-                    if (status === 'SUBSCRIBED') {
-                        await channel.track({ 
-                            userId: userId,
-                            online: true,
-                            timestamp: Date.now()
-                        });
-                        log('✅ Подключен к комнате');
-                    }
-                });
-
-            } catch (e) {
-                log('❌ Ошибка подключения: ' + e.message);
-            }
-        }
-
-        // Запускаем подключение
-        if (supabase) {
-            connectToRoom();
-        }
-
-        // ========== ФУНКЦИИ РИСОВАНИЯ ==========
-        function getCoordinates(e) {
+        let lastTap = 0;
+        
+        // ===== КООРДИНАТЫ =====
+        function getCoords(e) {
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
             
-            let clientX, clientY;
+            let x, y;
+            
             if (e.touches) {
-                clientX = e.touches[0].clientX;
-                clientY = e.touches[0].clientY;
+                x = (e.touches[0].clientX - rect.left) * scaleX;
+                y = (e.touches[0].clientY - rect.top) * scaleY;
             } else {
-                clientX = e.clientX;
-                clientY = e.clientY;
+                x = (e.clientX - rect.left) * scaleX;
+                y = (e.clientY - rect.top) * scaleY;
             }
             
-            return {
-                x: (clientX - rect.left) * scaleX,
-                y: (clientY - rect.top) * scaleY
+            return { 
+                x: Math.min(canvas.width, Math.max(0, x)),
+                y: Math.min(canvas.height, Math.max(0, y))
             };
         }
-
+        
+        // ===== РИСОВАНИЕ =====
         function startDrawing(e) {
             e.preventDefault();
             drawing = true;
-            const pos = getCoordinates(e);
-            lastX = pos.x;
-            lastY = pos.y;
-            document.getElementById('myStatus').innerHTML = '👤 Ты: рисуешь';
-            log('Начал рисование в ' + pos.x + ',' + pos.y);
+            const coords = getCoords(e);
+            lastX = coords.x;
+            lastY = coords.y;
+            document.getElementById('myStatus').innerHTML = '🎨 рисуешь';
         }
-
-        async function draw(e) {
+        
+        function draw(e) {
             if (!drawing) return;
             e.preventDefault();
             
-            const pos = getCoordinates(e);
+            const coords = getCoords(e);
             
-            // Рисуем у себя
             ctx.beginPath();
             ctx.moveTo(lastX, lastY);
-            ctx.lineTo(pos.x, pos.y);
+            ctx.lineTo(coords.x, coords.y);
             ctx.stroke();
             
-            // Отправляем партнеру
-            if (channel) {
-                try {
-                    await channel.send({
-                        type: 'broadcast',
-                        event: 'draw',
-                        payload: {
-                            userId: userId,
-                            x: pos.x,
-                            y: pos.y,
-                            lastX: lastX,
-                            lastY: lastY
-                        }
-                    });
-                } catch (e) {
-                    log('Ошибка отправки: ' + e.message);
-                }
-            }
-            
-            lastX = pos.x;
-            lastY = pos.y;
+            lastX = coords.x;
+            lastY = coords.y;
         }
-
+        
         function stopDrawing(e) {
             e.preventDefault();
             drawing = false;
-            document.getElementById('myStatus').innerHTML = '👤 Ты: активен';
+            document.getElementById('myStatus').innerHTML = '✨ рисуешь ты';
         }
-
-        // ========== НАВЕШИВАЕМ СОБЫТИЯ ==========
+        
+        // ===== СОБЫТИЯ =====
         canvas.addEventListener('mousedown', startDrawing);
         canvas.addEventListener('mousemove', draw);
         canvas.addEventListener('mouseup', stopDrawing);
         canvas.addEventListener('mouseleave', stopDrawing);
         
-        canvas.addEventListener('touchstart', startDrawing);
-        canvas.addEventListener('touchmove', draw);
-        canvas.addEventListener('touchend', stopDrawing);
-        canvas.addEventListener('touchcancel', stopDrawing);
-
-        log('✅ События рисования добавлены');
-
-        // ========== ВИБРАЦИЯ ==========
-        document.getElementById('vibrateBtn').addEventListener('click', async () => {
+        canvas.addEventListener('touchstart', startDrawing, { passive: false });
+        canvas.addEventListener('touchmove', draw, { passive: false });
+        canvas.addEventListener('touchend', stopDrawing, { passive: false });
+        canvas.addEventListener('touchcancel', stopDrawing, { passive: false });
+        
+        // ===== ВИБРАЦИЯ =====
+        document.getElementById('vibrateBtn').addEventListener('click', () => {
             if (navigator.vibrate) {
-                navigator.vibrate([100, 50, 100]);
+                navigator.vibrate([100, 50, 150]);
             }
-            
-            if (channel) {
-                await channel.send({
-                    type: 'broadcast',
-                    event: 'vibrate',
-                    payload: { userId: userId }
-                });
-            }
-            log('Вибрация отправлена');
+            document.getElementById('myStatus').innerHTML = '📱 вибрация!';
+            setTimeout(() => {
+                document.getElementById('myStatus').innerHTML = '✨ рисуешь ты';
+            }, 500);
         });
-
-        // ========== ОЧИСТКА ==========
-        document.getElementById('clearBtn').addEventListener('click', async () => {
-            ctx.fillStyle = 'black';
+        
+        // ===== ОЧИСТКА =====
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            ctx.fillStyle = '#0a0a0a';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            if (channel) {
-                await channel.send({
-                    type: 'broadcast',
-                    event: 'clear',
-                    payload: { userId: userId }
-                });
-            }
-            log('Холст очищен');
+            document.getElementById('myStatus').innerHTML = '✨ очищено';
+            setTimeout(() => {
+                document.getElementById('myStatus').innerHTML = '✨ рисуешь ты';
+            }, 500);
         });
-
-        // ========== ДВОЙНОЕ НАЖАТИЕ ==========
-        let lastTap = 0;
+        
+        // ===== ДВОЙНОЕ НАЖАТИЕ =====
         canvas.addEventListener('touchend', (e) => {
             const currentTime = new Date().getTime();
             const tapLength = currentTime - lastTap;
@@ -412,19 +451,18 @@
             }
             lastTap = currentTime;
         });
-
-        // ========== ПРОВЕРКА РАБОТОСПОСОБНОСТИ ==========
-        // Тест рисования
-        ctx.fillStyle = '#ff69b4';
-        ctx.fillRect(10, 10, 20, 20);
-        log('✅ Тестовый квадрат нарисован');
-
-        // Проверка поддержки touch
-        if ('ontouchstart' in window) {
-            log('✅ Тач-экран поддерживается');
-        }
-
-        log('🎨 Готов к работе!');
+        
+        // ===== TELEGRAM =====
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.ready();
+        
+        // Имитация партнера (для красоты)
+        setInterval(() => {
+            const dots = ['💕', '✨', '💫', '⭐'];
+            const randomDot = dots[Math.floor(Math.random() * dots.length)];
+            document.getElementById('partnerStatus').innerHTML = randomDot + ' рядом';
+        }, 3000);
     </script>
 </body>
 </html>
