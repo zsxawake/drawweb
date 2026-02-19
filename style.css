@@ -1,0 +1,131 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #0a0a0a;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.container {
+    background: #1a1a1a;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 0 50px rgba(255, 105, 180, 0.3);
+    border: 1px solid rgba(255, 105, 180, 0.3);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 0 10px;
+}
+
+h1 {
+    color: #ff69b4;
+    text-shadow: 0 0 10px #ff69b4,
+                 0 0 20px #ff69b4,
+                 0 0 30px #ff69b4;
+    font-size: 2em;
+    letter-spacing: 2px;
+}
+
+.controls {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.neon-button {
+    background: transparent;
+    border: 2px solid #ff69b4;
+    color: #ff69b4;
+    padding: 8px 20px;
+    border-radius: 25px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-shadow: 0 0 5px #ff69b4;
+    box-shadow: 0 0 10px rgba(255, 105, 180, 0.3);
+}
+
+.neon-button:hover {
+    background: #ff69b4;
+    color: #000;
+    box-shadow: 0 0 20px #ff69b4,
+                0 0 40px #ff69b4;
+    transform: scale(1.05);
+}
+
+.color-picker input {
+    width: 50px;
+    height: 50px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    background: transparent;
+    border: 2px solid #ff69b4;
+    padding: 2px;
+}
+
+.color-picker input::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.color-picker input::-webkit-color-swatch {
+    border: none;
+    border-radius: 50%;
+}
+
+.users-count {
+    color: #ff69b4;
+    font-size: 16px;
+    text-shadow: 0 0 5px #ff69b4;
+    padding: 8px 15px;
+    border: 1px solid rgba(255, 105, 180, 0.3);
+    border-radius: 25px;
+}
+
+canvas {
+    display: block;
+    margin: 0 auto;
+    background: #000;
+    border-radius: 15px;
+    box-shadow: 0 0 30px rgba(255, 105, 180, 0.5),
+                inset 0 0 50px rgba(255, 105, 180, 0.2);
+    cursor: crosshair;
+    border: 2px solid #ff69b4;
+}
+
+.footer {
+    margin-top: 15px;
+    text-align: center;
+    color: #ff69b4;
+    font-size: 14px;
+    text-shadow: 0 0 5px #ff69b4;
+}
+
+/* Анимация неонового мерцания */
+@keyframes neonPulse {
+    0%, 100% {
+        text-shadow: 0 0 10px #ff69b4,
+                     0 0 20px #ff69b4;
+    }
+    50% {
+        text-shadow: 0 0 15px #ff69b4,
+                     0 0 30px #ff69b4,
+                     0 0 45px #ff69b4;
+    }
+}
+
+h1, .neon-button, .users-count {
+    animation: neonPulse 2s infinite;
+}
