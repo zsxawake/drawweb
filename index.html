@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>💕 Наше пространство</title>
+    <title>💕 Рисуем вместе</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;600;700&display=swap');
-        
         * {
             margin: 0;
             padding: 0;
@@ -16,173 +14,72 @@
         }
 
         body {
-            min-height: 100vh;
             background: radial-gradient(circle at 30% 30%, #2a1a2a, #0a0a0a);
-            font-family: 'Quicksand', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
+            min-height: 100vh;
             padding: 16px;
-            position: relative;
-            overflow-x: hidden;
-        }
-
-        /* Анимированные звездочки */
-        body::before {
-            content: '';
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: url('data:image/svg+xml;utf8,<svg width="30" height="30" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg"><circle cx="5" cy="5" r="1" fill="rgba(255,105,180,0.3)"/><circle cx="25" cy="15" r="1.5" fill="rgba(255,105,180,0.4)"/><circle cx="15" cy="25" r="1" fill="rgba(255,105,180,0.3)"/><circle cx="28" cy="28" r="1" fill="rgba(255,105,180,0.5)"/></svg>');
-            opacity: 0.5;
-            animation: twinkle 4s infinite alternate;
-            pointer-events: none;
-        }
-
-        @keyframes twinkle {
-            0% { opacity: 0.3; }
-            100% { opacity: 0.8; }
         }
 
         .container {
             width: 100%;
             max-width: 500px;
-            position: relative;
-            z-index: 10;
-        }
-
-        /* Неоновые лучи */
-        .glow-effect {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at 50% 50%, rgba(255,105,180,0.2), transparent 70%);
-            filter: blur(40px);
-            animation: glowPulse 3s infinite alternate;
-            pointer-events: none;
-        }
-
-        @keyframes glowPulse {
-            0% { opacity: 0.3; transform: scale(0.95); }
-            100% { opacity: 0.7; transform: scale(1.05); }
         }
 
         .header {
             text-align: center;
-            margin-bottom: 25px;
-            position: relative;
+            margin-bottom: 20px;
         }
 
         .header h1 {
-            font-size: 32px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #fff5f5, #ffb6c1, #ff69b4);
+            background: linear-gradient(135deg, #ffb6c1, #ff69b4);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-shadow: 0 0 30px rgba(255,105,180,0.5);
-            letter-spacing: 2px;
-            margin-bottom: 8px;
-            animation: titleGlow 3s infinite alternate;
-        }
-
-        @keyframes titleGlow {
-            0% { text-shadow: 0 0 20px rgba(255,105,180,0.3); }
-            100% { text-shadow: 0 0 40px rgba(255,105,180,0.8); }
-        }
-
-        .header p {
-            color: rgba(255,182,193,0.9);
-            font-size: 16px;
-            font-weight: 300;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            animation: fadeInOut 3s infinite alternate;
-        }
-
-        @keyframes fadeInOut {
-            0% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-
-        .glass-panel {
-            background: rgba(20, 10, 20, 0.4);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,105,180,0.3);
-            border-radius: 40px;
-            padding: 20px;
-            box-shadow: 
-                0 0 40px rgba(255,105,180,0.2),
-                inset 0 0 30px rgba(255,105,180,0.1);
-            margin-bottom: 20px;
+            font-size: 32px;
+            text-shadow: 0 0 20px rgba(255,105,180,0.5);
         }
 
         .status-bar {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding: 12px 20px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 50px;
+            background: rgba(255,105,180,0.1);
+            backdrop-filter: blur(10px);
             border: 1px solid rgba(255,105,180,0.3);
-            backdrop-filter: blur(5px);
-        }
-
-        .user-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            border-radius: 50px;
+            padding: 12px 20px;
+            margin-bottom: 20px;
             color: #ffb6c1;
-            font-weight: 500;
-            font-size: 14px;
         }
 
-        .pulse-dot {
+        .online-dot {
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            background: #ff69b4;
-            box-shadow: 0 0 15px #ff69b4;
-            animation: pulseDot 2s infinite;
+            background: #4caf50;
+            box-shadow: 0 0 15px #4caf50;
+            animation: pulse 2s infinite;
         }
 
-        @keyframes pulseDot {
-            0% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(1.2); }
-            100% { opacity: 1; transform: scale(1); }
+        .online-dot.offline {
+            background: #666;
+            box-shadow: none;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
         }
 
         .canvas-wrapper {
-            position: relative;
-            border-radius: 35px;
-            padding: 12px;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px);
             border: 2px solid rgba(255,105,180,0.5);
-            box-shadow: 
-                0 0 60px rgba(255,105,180,0.3),
-                inset 0 0 30px rgba(255,105,180,0.2);
-        }
-
-        .canvas-wrapper::before {
-            content: '';
-            position: absolute;
-            top: -3px;
-            left: -3px;
-            right: -3px;
-            bottom: -3px;
-            border-radius: 40px;
-            background: linear-gradient(45deg, #ff69b4, #ff1493, #ff69b4);
-            opacity: 0.3;
-            z-index: -1;
-            filter: blur(10px);
-            animation: borderGlow 3s infinite alternate;
-        }
-
-        @keyframes borderGlow {
-            0% { opacity: 0.2; filter: blur(5px); }
-            100% { opacity: 0.5; filter: blur(15px); }
+            border-radius: 30px;
+            padding: 12px;
+            box-shadow: 0 0 50px rgba(255,105,180,0.3);
         }
 
         canvas {
@@ -190,164 +87,116 @@
             width: 100%;
             height: auto;
             background: #0a0a0a;
-            border-radius: 30px;
+            border-radius: 20px;
             touch-action: none;
             cursor: crosshair;
-            box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
         }
 
-        .tools {
+        .buttons {
             display: flex;
             gap: 15px;
-            margin-top: 25px;
-            justify-content: center;
+            margin-top: 20px;
         }
 
-        .tool-btn {
+        button {
             flex: 1;
-            max-width: 180px;
-            padding: 18px 0;
+            padding: 16px;
             border: none;
-            border-radius: 50px;
+            border-radius: 30px;
             font-size: 18px;
             font-weight: 600;
-            font-family: 'Quicksand', sans-serif;
-            color: white;
             background: linear-gradient(145deg, #ff1493, #ff69b4);
-            box-shadow: 
-                0 10px 25px rgba(255,20,147,0.4),
-                0 0 30px rgba(255,105,180,0.4);
+            color: white;
+            box-shadow: 0 10px 25px rgba(255,20,147,0.4);
             cursor: pointer;
             touch-action: manipulation;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            letter-spacing: 1px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            transition: transform 0.2s;
         }
 
-        .tool-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            transition: left 0.5s;
-        }
-
-        .tool-btn:hover::before {
-            left: 100%;
-        }
-
-        .tool-btn:active {
+        button:active {
             transform: scale(0.95);
-            box-shadow: 0 5px 15px rgba(255,20,147,0.6);
         }
 
-        .tool-btn.clear {
+        button.clear {
             background: linear-gradient(145deg, #2a1a2a, #1a1a1a);
             border: 2px solid #ff69b4;
-            box-shadow: 0 10px 25px rgba(255,105,180,0.2);
         }
 
-        /* Анимированная подсказка */
         .hint {
             text-align: center;
-            margin-top: 20px;
             color: rgba(255,182,193,0.6);
+            margin-top: 15px;
             font-size: 14px;
-            font-weight: 300;
-            animation: hintFloat 3s infinite alternate;
         }
 
-        @keyframes hintFloat {
-            0% { transform: translateY(0); opacity: 0.5; }
-            100% { transform: translateY(-5px); opacity: 1; }
-        }
-
-        .hint span {
+        .debug {
+            margin-top: 10px;
             color: #ff69b4;
-            font-weight: 600;
-        }
-
-        /* Эффект свечения для статуса */
-        .glow-text {
-            text-shadow: 0 0 15px currentColor;
-        }
-
-        /* Иконки */
-        .icon {
-            font-size: 22px;
-            filter: drop-shadow(0 0 8px rgba(255,105,180,0.8));
-        }
-
-        /* Адаптация для маленьких экранов */
-        @media (max-width: 400px) {
-            .header h1 { font-size: 28px; }
-            .tool-btn { font-size: 16px; padding: 15px 0; }
+            font-size: 12px;
+            background: rgba(0,0,0,0.5);
+            padding: 8px;
+            border-radius: 10px;
+            max-height: 60px;
+            overflow-y: auto;
         }
     </style>
 </head>
 <body>
-    <div class="glow-effect"></div>
-    
     <div class="container">
         <div class="header">
-            <h1>для двоих</h1>
-            <p>наше маленькое пространство</p>
+            <h1>🎨 для двоих</h1>
         </div>
 
-        <div class="glass-panel">
-            <div class="status-bar">
-                <div class="user-status">
-                    <span class="icon">✨</span>
-                    <span id="myStatus">рисуешь ты</span>
-                </div>
-                <div class="user-status">
-                    <span class="pulse-dot"></span>
-                    <span id="partnerStatus">ждем</span>
-                </div>
-            </div>
-
-            <div class="canvas-wrapper">
-                <canvas id="canvas" width="500" height="500"></canvas>
-            </div>
-
-            <div class="tools">
-                <button class="tool-btn" id="vibrateBtn">
-                    <span class="icon">📱</span>
-                    вибрация
-                </button>
-                <button class="tool-btn clear" id="clearBtn">
-                    <span class="icon">🧹</span>
-                    очистить
-                </button>
-            </div>
-
-            <div class="hint">
-                <span>💕</span> двойное касание — вибрация <span>💕</span>
+        <div class="status-bar">
+            <span id="myStatus">👤 Ты: рисуешь</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span id="partnerStatus">👥 Партнер: офлайн</span>
+                <span class="online-dot offline" id="onlineDot"></span>
             </div>
         </div>
+
+        <div class="canvas-wrapper">
+            <canvas id="canvas" width="500" height="500"></canvas>
+        </div>
+
+        <div class="buttons">
+            <button id="vibrateBtn">📱 Вибрация</button>
+            <button id="clearBtn" class="clear">🧹 Очистить</button>
+        </div>
+
+        <div class="hint">
+            💕 Двойное нажатие = вибрация 💕
+        </div>
+
+        <div class="debug" id="debug"></div>
     </div>
 
     <script>
+        // ===== TELEGRAM =====
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.ready();
+        
+        // ===== ДЕБАГ =====
+        const debug = document.getElementById('debug');
+        function log(msg) {
+            console.log(msg);
+            debug.innerHTML = '> ' + msg + '<br>' + debug.innerHTML;
+            if (debug.children.length > 3) debug.removeChild(debug.lastChild);
+        }
+        
+        log('🚀 Запуск...');
+
         // ===== ХОЛСТ =====
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         
-        // Настройки
         ctx.strokeStyle = '#ff69b4';
         ctx.lineWidth = 8;
         ctx.lineCap = 'round';
         ctx.shadowColor = '#ff69b4';
         ctx.shadowBlur = 15;
         
-        // Фон
         ctx.fillStyle = '#0a0a0a';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
@@ -356,15 +205,25 @@
         let lastX = 0;
         let lastY = 0;
         let lastTap = 0;
+        let userId = 'user_' + Math.random().toString(36).substr(2, 6);
         
-        // ===== КООРДИНАТЫ =====
+        log('🆔 ' + userId);
+        
+        // ===== ОНЛАЙН СТАТУС =====
+        let onlineInterval = setInterval(() => {
+            tg.sendData(JSON.stringify({
+                type: 'ping',
+                userId: userId
+            }));
+        }, 2000);
+        
+        // ===== ПОЛУЧЕНИЕ КООРДИНАТ =====
         function getCoords(e) {
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
             
             let x, y;
-            
             if (e.touches) {
                 x = (e.touches[0].clientX - rect.left) * scaleX;
                 y = (e.touches[0].clientY - rect.top) * scaleY;
@@ -373,7 +232,7 @@
                 y = (e.clientY - rect.top) * scaleY;
             }
             
-            return { 
+            return {
                 x: Math.min(canvas.width, Math.max(0, x)),
                 y: Math.min(canvas.height, Math.max(0, y))
             };
@@ -386,7 +245,7 @@
             const coords = getCoords(e);
             lastX = coords.x;
             lastY = coords.y;
-            document.getElementById('myStatus').innerHTML = '🎨 рисуешь';
+            document.getElementById('myStatus').innerHTML = '👤 Ты: ✏️ рисуешь';
         }
         
         function draw(e) {
@@ -395,10 +254,21 @@
             
             const coords = getCoords(e);
             
+            // Рисуем у себя
             ctx.beginPath();
             ctx.moveTo(lastX, lastY);
             ctx.lineTo(coords.x, coords.y);
             ctx.stroke();
+            
+            // Отправляем партнеру
+            tg.sendData(JSON.stringify({
+                type: 'draw',
+                userId: userId,
+                x: coords.x,
+                y: coords.y,
+                lastX: lastX,
+                lastY: lastY
+            }));
             
             lastX = coords.x;
             lastY = coords.y;
@@ -407,7 +277,7 @@
         function stopDrawing(e) {
             e.preventDefault();
             drawing = false;
-            document.getElementById('myStatus').innerHTML = '✨ рисуешь ты';
+            document.getElementById('myStatus').innerHTML = '👤 Ты: активен';
         }
         
         // ===== СОБЫТИЯ =====
@@ -421,14 +291,72 @@
         canvas.addEventListener('touchend', stopDrawing, { passive: false });
         canvas.addEventListener('touchcancel', stopDrawing, { passive: false });
         
+        // ===== ПОЛУЧЕНИЕ ДАННЫХ ОТ ПАРТНЕРА =====
+        tg.onEvent('webAppData', function(data) {
+            try {
+                const msg = JSON.parse(data);
+                log('📩 Получено: ' + msg.type);
+                
+                if (msg.type === 'draw' && msg.userId !== userId) {
+                    // Рисуем линию партнера
+                    ctx.beginPath();
+                    ctx.moveTo(msg.lastX, msg.lastY);
+                    ctx.lineTo(msg.x, msg.y);
+                    ctx.stroke();
+                    
+                    document.getElementById('partnerStatus').innerHTML = '👥 Партнер: ✏️ рисует';
+                    document.getElementById('onlineDot').className = 'online-dot';
+                    
+                    setTimeout(() => {
+                        document.getElementById('partnerStatus').innerHTML = '👥 Партнер: онлайн';
+                    }, 1000);
+                    
+                } else if (msg.type === 'vibrate' && msg.userId !== userId) {
+                    if (navigator.vibrate) {
+                        navigator.vibrate([100, 50, 100]);
+                    }
+                    document.getElementById('partnerStatus').innerHTML = '👥 Партнер: 📱 вибрация';
+                    document.getElementById('onlineDot').className = 'online-dot';
+                    
+                    setTimeout(() => {
+                        document.getElementById('partnerStatus').innerHTML = '👥 Партнер: онлайн';
+                    }, 1500);
+                    
+                } else if (msg.type === 'clear' && msg.userId !== userId) {
+                    ctx.fillStyle = '#0a0a0a';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    document.getElementById('partnerStatus').innerHTML = '👥 Партнер: 🧹 очистил';
+                    document.getElementById('onlineDot').className = 'online-dot';
+                    
+                    setTimeout(() => {
+                        document.getElementById('partnerStatus').innerHTML = '👥 Партнер: онлайн';
+                    }, 1500);
+                    
+                } else if (msg.type === 'ping') {
+                    document.getElementById('partnerStatus').innerHTML = '👥 Партнер: онлайн';
+                    document.getElementById('onlineDot').className = 'online-dot';
+                }
+                
+            } catch(e) {
+                log('❌ Ошибка: ' + e.message);
+            }
+        });
+        
         // ===== ВИБРАЦИЯ =====
         document.getElementById('vibrateBtn').addEventListener('click', () => {
             if (navigator.vibrate) {
                 navigator.vibrate([100, 50, 150]);
             }
-            document.getElementById('myStatus').innerHTML = '📱 вибрация!';
+            
+            tg.sendData(JSON.stringify({
+                type: 'vibrate',
+                userId: userId
+            }));
+            
+            document.getElementById('myStatus').innerHTML = '👤 Ты: 📱 вибрация';
             setTimeout(() => {
-                document.getElementById('myStatus').innerHTML = '✨ рисуешь ты';
+                document.getElementById('myStatus').innerHTML = '👤 Ты: активен';
             }, 500);
         });
         
@@ -436,9 +364,15 @@
         document.getElementById('clearBtn').addEventListener('click', () => {
             ctx.fillStyle = '#0a0a0a';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            document.getElementById('myStatus').innerHTML = '✨ очищено';
+            
+            tg.sendData(JSON.stringify({
+                type: 'clear',
+                userId: userId
+            }));
+            
+            document.getElementById('myStatus').innerHTML = '👤 Ты: 🧹 очистил';
             setTimeout(() => {
-                document.getElementById('myStatus').innerHTML = '✨ рисуешь ты';
+                document.getElementById('myStatus').innerHTML = '👤 Ты: активен';
             }, 500);
         });
         
@@ -452,17 +386,7 @@
             lastTap = currentTime;
         });
         
-        // ===== TELEGRAM =====
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-        tg.ready();
-        
-        // Имитация партнера (для красоты)
-        setInterval(() => {
-            const dots = ['💕', '✨', '💫', '⭐'];
-            const randomDot = dots[Math.floor(Math.random() * dots.length)];
-            document.getElementById('partnerStatus').innerHTML = randomDot + ' рядом';
-        }, 3000);
+        log('✅ Готово! Ждем партнера...');
     </script>
 </body>
 </html>
