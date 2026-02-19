@@ -57,14 +57,14 @@
             width: 10px;
             height: 10px;
             border-radius: 50%;
+            background: #666;
+            transition: all 0.3s;
+        }
+
+        .online-dot.online {
             background: #4caf50;
             box-shadow: 0 0 15px #4caf50;
             animation: pulse 2s infinite;
-        }
-
-        .online-dot.offline {
-            background: #666;
-            box-shadow: none;
         }
 
         @keyframes pulse {
@@ -148,10 +148,10 @@
         </div>
 
         <div class="status-bar">
-            <span id="myStatus">👤 Ты: рисуешь</span>
+            <span id="myStatus">👤 Ты: активен</span>
             <div style="display: flex; align-items: center; gap: 8px;">
                 <span id="partnerStatus">👥 Партнер: офлайн</span>
-                <span class="online-dot offline" id="onlineDot"></span>
+                <span class="online-dot" id="onlineDot"></span>
             </div>
         </div>
 
@@ -181,7 +181,7 @@
         const debug = document.getElementById('debug');
         function log(msg) {
             console.log(msg);
-            debug.innerHTML = '> ' + msg + '<br>' + debug.innerHTML;
+            debug.innerHTML = '> ' + new Date().toLocaleTimeString() + ': ' + msg + '<br>' + debug.innerHTML;
             if (debug.children.length > 3) debug.removeChild(debug.lastChild);
         }
         
@@ -191,12 +191,12 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         
+        // Настройки рисования
         ctx.strokeStyle = '#ff69b4';
         ctx.lineWidth = 8;
         ctx.lineCap = 'round';
-        ctx.shadowColor = '#ff69b4';
-        ctx.shadowBlur = 15;
         
+        // Черный фон
         ctx.fillStyle = '#0a0a0a';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
@@ -205,15 +205,17 @@
         let lastX = 0;
         let lastY = 0;
         let lastTap = 0;
-        let userId = 'user_' + Math.random().toString(36).substr(2, 6);
+        let userId = 'user_' + Math.random().toString(36).substr(2, 8);
+        let partnerOnline = false;
         
-        log('🆔 ' + userId);
+        log('🆔 Мой ID: ' + userId);
         
-        // ===== ОНЛАЙН СТАТУС =====
-        let onlineInterval = setInterval(() => {
+        // ===== ПИНГ ДЛЯ ОНЛАЙН СТАТУСА =====
+        setInterval(() => {
             tg.sendData(JSON.stringify({
                 type: 'ping',
-                userId: userId
+                userId: userId,
+                time: Date.now()
             }));
         }, 2000);
         
@@ -224,6 +226,7 @@
             const scaleY = canvas.height / rect.height;
             
             let x, y;
+            
             if (e.touches) {
                 x = (e.touches[0].clientX - rect.left) * scaleX;
                 y = (e.touches[0].clientY - rect.top) * scaleY;
@@ -232,10 +235,11 @@
                 y = (e.clientY - rect.top) * scaleY;
             }
             
-            return {
-                x: Math.min(canvas.width, Math.max(0, x)),
-                y: Math.min(canvas.height, Math.max(0, y))
-            };
+            // Ограничиваем координаты
+            x = Math.max(0, Math.min(canvas.width, x));
+            y = Math.max(0, Math.min(canvas.height, y));
+            
+            return { x, y };
         }
         
         // ===== РИСОВАНИЕ =====
@@ -246,6 +250,7 @@
             lastX = coords.x;
             lastY = coords.y;
             document.getElementById('myStatus').innerHTML = '👤 Ты: ✏️ рисуешь';
+            log('✏️ Начал рисование');
         }
         
         function draw(e) {
@@ -295,7 +300,6 @@
         tg.onEvent('webAppData', function(data) {
             try {
                 const msg = JSON.parse(data);
-                log('📩 Получено: ' + msg.type);
                 
                 if (msg.type === 'draw' && msg.userId !== userId) {
                     // Рисуем линию партнера
@@ -305,43 +309,69 @@
                     ctx.stroke();
                     
                     document.getElementById('partnerStatus').innerHTML = '👥 Партнер: ✏️ рисует';
-                    document.getElementById('onlineDot').className = 'online-dot';
+                    document.getElementById('onlineDot').className = 'online-dot online';
+                    partnerOnline = true;
                     
                     setTimeout(() => {
-                        document.getElementById('partnerStatus').innerHTML = '👥 Партнер: онлайн';
+                        if (partnerOnline) {
+                            document.getElementById('partnerStatus').innerHTML = '👥 Партнер: онлайн';
+                        }
                     }, 1000);
+                    
+                    log('👀 Получен рисунок');
                     
                 } else if (msg.type === 'vibrate' && msg.userId !== userId) {
                     if (navigator.vibrate) {
                         navigator.vibrate([100, 50, 100]);
                     }
+                    
                     document.getElementById('partnerStatus').innerHTML = '👥 Партнер: 📱 вибрация';
-                    document.getElementById('onlineDot').className = 'online-dot';
+                    document.getElementById('onlineDot').className = 'online-dot online';
+                    partnerOnline = true;
                     
                     setTimeout(() => {
-                        document.getElementById('partnerStatus').innerHTML = '👥 Партнер: онлайн';
+                        if (partnerOnline) {
+                            document.getElementById('partnerStatus').innerHTML = '👥 Партнер: онлайн';
+                        }
                     }, 1500);
+                    
+                    log('📱 Получена вибрация');
                     
                 } else if (msg.type === 'clear' && msg.userId !== userId) {
                     ctx.fillStyle = '#0a0a0a';
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
                     
                     document.getElementById('partnerStatus').innerHTML = '👥 Партнер: 🧹 очистил';
-                    document.getElementById('onlineDot').className = 'online-dot';
+                    document.getElementById('onlineDot').className = 'online-dot online';
+                    partnerOnline = true;
                     
                     setTimeout(() => {
-                        document.getElementById('partnerStatus').innerHTML = '👥 Партнер: онлайн';
+                        if (partnerOnline) {
+                            document.getElementById('partnerStatus').innerHTML = '👥 Партнер: онлайн';
+                        }
                     }, 1500);
                     
-                } else if (msg.type === 'ping') {
+                    log('🧹 Получена очистка');
+                    
+                } else if (msg.type === 'ping' && msg.userId !== userId) {
                     document.getElementById('partnerStatus').innerHTML = '👥 Партнер: онлайн';
-                    document.getElementById('onlineDot').className = 'online-dot';
+                    document.getElementById('onlineDot').className = 'online-dot online';
+                    partnerOnline = true;
                 }
                 
             } catch(e) {
                 log('❌ Ошибка: ' + e.message);
             }
         });
+        
+        // Проверка онлайн статуса (если долго нет пинга)
+        setInterval(() => {
+            if (!partnerOnline) {
+                document.getElementById('partnerStatus').innerHTML = '👥 Партнер: офлайн';
+                document.getElementById('onlineDot').className = 'online-dot';
+            }
+            partnerOnline = false;
+        }, 5000);
         
         // ===== ВИБРАЦИЯ =====
         document.getElementById('vibrateBtn').addEventListener('click', () => {
@@ -358,6 +388,8 @@
             setTimeout(() => {
                 document.getElementById('myStatus').innerHTML = '👤 Ты: активен';
             }, 500);
+            
+            log('📱 Отправлена вибрация');
         });
         
         // ===== ОЧИСТКА =====
@@ -374,6 +406,8 @@
             setTimeout(() => {
                 document.getElementById('myStatus').innerHTML = '👤 Ты: активен';
             }, 500);
+            
+            log('🧹 Отправлена очистка');
         });
         
         // ===== ДВОЙНОЕ НАЖАТИЕ =====
@@ -381,6 +415,7 @@
             const currentTime = new Date().getTime();
             const tapLength = currentTime - lastTap;
             if (tapLength < 300 && tapLength > 0) {
+                e.preventDefault();
                 document.getElementById('vibrateBtn').click();
             }
             lastTap = currentTime;
