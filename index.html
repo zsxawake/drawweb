@@ -3,83 +3,498 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neon Draw - Совместное рисование</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Онлайн рисовалка с Supabase</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 1200px;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .color-picker {
+            width: 50px;
+            height: 50px;
+            border: 3px solid #fff;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .tool-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .tool-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .tool-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .clear-btn {
+            background: #ff4757;
+            color: white;
+        }
+
+        .clear-btn:hover {
+            background: #ff3838;
+        }
+
+        .slider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            padding: 5px 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .canvas-wrapper {
+            border: 3px solid #fff;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            background: white;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .online-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #2ecc71;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(46, 204, 113, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+        }
+
+        .counter {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .users-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-left: auto;
+        }
+
+        .user-badge {
+            background: #e0e7ff;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            color: #4f46e5;
+            font-weight: 500;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>✨ Neon Draw ✨</h1>
-            <div class="controls">
-                <button id="clearBtn" class="neon-button">Очистить</button>
-                <div class="color-picker">
-                    <input type="color" id="colorPicker" value="#ff69b4">
-                </div>
-                <div class="users-count">
-                    👥 <span id="usersCount">1</span> онлайн
-                </div>
+        <div class="toolbar">
+            <div class="slider">
+                <span>🖌️</span>
+                <input type="range" id="brushSize" min="1" max="50" value="5">
+                <span id="sizeValue">5px</span>
             </div>
+            
+            <input type="color" id="colorPicker" class="color-picker" value="#000000">
+            
+            <button class="tool-btn" id="drawBtn">✏️ Рисовать</button>
+            <button class="tool-btn" id="eraserBtn">🧽 Ластик</button>
+            <button class="tool-btn clear-btn" id="clearBtn">🗑️ Очистить</button>
         </div>
-        
-        <canvas id="drawCanvas" width="800" height="500"></canvas>
-        
-        <div class="footer">
-            <p>Рисуйте вместе! ✨</p>
+
+        <div class="canvas-wrapper">
+            <canvas id="canvas"></canvas>
+        </div>
+
+        <div class="status">
+            <div class="online-indicator"></div>
+            <span>Онлайн: <span id="onlineCount" class="counter">0</span></span>
+            <div class="users-list" id="usersList"></div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase-config.js"></script>
-    <script src="script.js"></script>
-
-    <!-- Отладочная панель -->
-<div style="position: fixed; bottom: 20px; right: 20px; background: rgba(0,0,0,0.9); color: #ff69b4; padding: 15px; border-radius: 10px; font-size: 14px; border: 2px solid #ff69b4; z-index: 1000; box-shadow: 0 0 20px #ff69b4;">
-    <div style="margin-bottom: 5px;">🔍 <strong>Отладка</strong></div>
-    <div>📊 Точек в БД: <span id="debugPointCount">0</span></div>
-    <div>🖌️ Последнее действие: <span id="debugAction">-</span></div>
-    <div style="margin-top: 10px;">
-        <button id="debugRefresh" style="background: transparent; border: 1px solid #ff69b4; color: #ff69b4; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-right: 5px;">🔄 Проверить БД</button>
-    </div>
-</div>
-
-<script>
-// Отладочные функции
-document.getElementById('debugRefresh').addEventListener('click', async () => {
-    try {
-        document.getElementById('debugAction').textContent = 'Проверка...';
+    <script>
+        // Инициализация Supabase
+        const SUPABASE_URL = 'https://nevgxteatqacmjhpkbhy.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ldmd4dGVhdHFhY21qaHBrYmh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MTEyODUsImV4cCI6MjA4NzA4NzI4NX0.fJVfW9m1Ob1GqbRUkhJx7i7v685yID8qkjCN_zhNvkg';
         
-        const { data, error } = await supabase
-            .from('drawings')
-            .select('*');
+        // Создаем клиент Supabase
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Получаем элементы canvas
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Переменные для рисования
+        let drawing = false;
+        let currentX = 0;
+        let currentY = 0;
+        let brushSize = 5;
+        let brushColor = '#000000';
+        let isErasing = false;
+        let currentUser = null;
+        let lastDrawTime = 0;
+        const DRAW_THROTTLE = 50; // Отправка не чаще чем раз в 50ms
+
+        // Устанавливаем размер canvas
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight * 0.8;
             
-        if (error) throw error;
-        
-        document.getElementById('debugPointCount').textContent = data.length;
-        document.getElementById('debugAction').textContent = `Найдено ${data.length} точек`;
-        
-        console.log('Все точки из БД:', data);
-    } catch (error) {
-        document.getElementById('debugAction').textContent = 'Ошибка!';
-        console.error('Ошибка проверки:', error);
-    }
-});
-
-// Обновляем счетчик точек каждые 2 секунды
-setInterval(async () => {
-    try {
-        const { count, error } = await supabase
-            .from('drawings')
-            .select('*', { count: 'exact', head: true });
-            
-        if (!error) {
-            document.getElementById('debugPointCount').textContent = count;
+            // Загружаем предыдущие рисунки после изменения размера
+            loadExistingDrawings();
         }
-    } catch (e) {
-        // Игнорируем ошибки
-    }
-}, 2000);
-</script>
-    
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Настройка рисования
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        // Элементы управления
+        const brushSizeInput = document.getElementById('brushSize');
+        const sizeValue = document.getElementById('sizeValue');
+        const colorPicker = document.getElementById('colorPicker');
+        const drawBtn = document.getElementById('drawBtn');
+        const eraserBtn = document.getElementById('eraserBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const onlineCountSpan = document.getElementById('onlineCount');
+        const usersListDiv = document.getElementById('usersList');
+
+        // Обновление размера кисти
+        brushSizeInput.addEventListener('input', (e) => {
+            brushSize = parseInt(e.target.value);
+            sizeValue.textContent = brushSize + 'px';
+        });
+
+        // Обновление цвета
+        colorPicker.addEventListener('input', (e) => {
+            brushColor = e.target.value;
+            isErasing = false;
+            drawBtn.classList.add('active');
+            eraserBtn.classList.remove('active');
+        });
+
+        // Кнопка рисования
+        drawBtn.addEventListener('click', () => {
+            isErasing = false;
+            drawBtn.classList.add('active');
+            eraserBtn.classList.remove('active');
+            colorPicker.disabled = false;
+        });
+
+        // Кнопка ластика
+        eraserBtn.addEventListener('click', () => {
+            isErasing = true;
+            eraserBtn.classList.add('active');
+            drawBtn.classList.remove('active');
+            colorPicker.disabled = true;
+        });
+
+        // Очистка холста
+        clearBtn.addEventListener('click', async () => {
+            if (confirm('Очистить холст для всех?')) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                await supabase.from('drawings').delete().neq('id', 0);
+            }
+        });
+
+        // Функция для рисования на холсте
+        function draw(x1, y1, x2, y2, size, color, erasing) {
+            ctx.beginPath();
+            ctx.strokeStyle = erasing ? '#ffffff' : color;
+            ctx.lineWidth = size;
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        // Отправка данных в Supabase
+        async function sendDrawingData(x1, y1, x2, y2, size, color, erasing) {
+            const now = Date.now();
+            if (now - lastDrawTime < DRAW_THROTTLE) return;
+            
+            lastDrawTime = now;
+            
+            const { error } = await supabase
+                .from('drawings')
+                .insert([
+                    { 
+                        x1, y1, x2, y2, 
+                        size, 
+                        color: erasing ? '#ffffff' : color,
+                        user_id: currentUser?.id 
+                    }
+                ]);
+
+            if (error) console.error('Ошибка отправки:', error);
+        }
+
+        // Обработчики мыши
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', drawDrawing);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        // Обработчики касания
+        canvas.addEventListener('touchstart', handleTouchStart);
+        canvas.addEventListener('touchmove', handleTouchMove);
+        canvas.addEventListener('touchend', stopDrawing);
+
+        function startDrawing(e) {
+            drawing = true;
+            const pos = getCoordinates(e);
+            currentX = pos.x;
+            currentY = pos.y;
+        }
+
+        function drawDrawing(e) {
+            if (!drawing) return;
+            
+            e.preventDefault();
+            
+            const pos = getCoordinates(e);
+            const newX = pos.x;
+            const newY = pos.y;
+
+            // Рисуем локально
+            draw(currentX, currentY, newX, newY, brushSize, brushColor, isErasing);
+            
+            // Отправляем другим
+            sendDrawingData(currentX, currentY, newX, newY, brushSize, brushColor, isErasing);
+
+            currentX = newX;
+            currentY = newY;
+        }
+
+        function stopDrawing() {
+            drawing = false;
+        }
+
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const pos = getCoordinates(e.touches[0]);
+            drawing = true;
+            currentX = pos.x;
+            currentY = pos.y;
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (!drawing) return;
+            
+            const pos = getCoordinates(e.touches[0]);
+            const newX = pos.x;
+            const newY = pos.y;
+
+            draw(currentX, currentY, newX, newY, brushSize, brushColor, isErasing);
+            sendDrawingData(currentX, currentY, newX, newY, brushSize, brushColor, isErasing);
+
+            currentX = newX;
+            currentY = newY;
+        }
+
+        function getCoordinates(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            let clientX, clientY;
+            
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            
+            const x = (clientX - rect.left) * scaleX;
+            const y = (clientY - rect.top) * scaleY;
+            
+            return { 
+                x: Math.max(0, Math.min(canvas.width, x)),
+                y: Math.max(0, Math.min(canvas.height, y))
+            };
+        }
+
+        // Загрузка существующих рисунков
+        async function loadExistingDrawings() {
+            const { data, error } = await supabase
+                .from('drawings')
+                .select('*')
+                .order('created_at', { ascending: true });
+
+            if (error) {
+                console.error('Ошибка загрузки:', error);
+                return;
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            data.forEach(d => {
+                draw(d.x1, d.y1, d.x2, d.y2, d.size, d.color, d.color === '#ffffff');
+            });
+        }
+
+        // Подписка на новые рисунки
+        function subscribeToDrawings() {
+            supabase
+                .channel('drawings-channel')
+                .on('postgres_changes', 
+                    { 
+                        event: 'INSERT', 
+                        schema: 'public', 
+                        table: 'drawings' 
+                    }, 
+                    (payload) => {
+                        // Не рисуем свои сообщения
+                        if (payload.new.user_id !== currentUser?.id) {
+                            draw(
+                                payload.new.x1, 
+                                payload.new.y1, 
+                                payload.new.x2, 
+                                payload.new.y2, 
+                                payload.new.size, 
+                                payload.new.color,
+                                payload.new.color === '#ffffff'
+                            );
+                        }
+                    }
+                )
+                .subscribe();
+        }
+
+        // Управление пользователями
+        async function setupUser() {
+            // Создаем или получаем пользователя
+            let { data: { user } } = await supabase.auth.getUser();
+            
+            if (!user) {
+                const { data, error } = await supabase.auth.signInAnonymously();
+                if (error) {
+                    console.error('Ошибка авторизации:', error);
+                    return;
+                }
+                user = data.user;
+            }
+            
+            currentUser = user;
+            
+            // Обновляем статус онлайн
+            await supabase.from('online_users').upsert({ 
+                id: user.id,
+                last_seen: new Date().toISOString()
+            });
+
+            // Следим за онлайн пользователями
+            supabase
+                .channel('online-users-channel')
+                .on('presence', { event: 'sync' }, () => {
+                    const presence = supabase.channel('online-users-channel').presenceState();
+                    const users = Object.values(presence).flat();
+                    onlineCountSpan.textContent = users.length;
+                    
+                    usersListDiv.innerHTML = users
+                        .map(u => `<span class="user-badge">👤 User ${u.user_id.slice(0,4)}</span>`)
+                        .join('');
+                })
+                .subscribe(async (status) => {
+                    if (status === 'SUBSCRIBED') {
+                        await supabase.channel('online-users-channel').track({
+                            user_id: user.id,
+                            online_at: new Date().toISOString()
+                        });
+                    }
+                });
+        }
+
+        // Инициализация
+        async function init() {
+            await setupUser();
+            await loadExistingDrawings();
+            subscribeToDrawings();
+        }
+
+        init();
+
+        // Очистка при закрытии
+        window.addEventListener('beforeunload', () => {
+            if (currentUser) {
+                supabase.channel('online-users-channel').untrack();
+            }
+        });
+    </script>
 </body>
 </html>
-
